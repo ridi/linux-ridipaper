@@ -1,0 +1,1 @@
+cmd_drivers/mfd/built-in.o :=  /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL    -r -o drivers/mfd/built-in.o drivers/mfd/pfuze-core.o drivers/mfd/mfd-core.o drivers/mfd/mxc-hdmi-core.o drivers/mfd/max17135-core.o drivers/mfd/ricoh619.o drivers/mfd/ricoh619-irq.o 

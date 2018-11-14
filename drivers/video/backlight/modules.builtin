@@ -1,0 +1,6 @@
+kernel/drivers/video/backlight/backlight.ko
+kernel/drivers/video/backlight/pwm_bl.ko
+kernel/drivers/video/backlight/lm3630a_bl.ko
+kernel/drivers/video/backlight/lm3630a_bl_tables.ko
+kernel/drivers/video/backlight/mxc_msp430_fl.ko
+kernel/drivers/video/backlight/tlc5947.ko

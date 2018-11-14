@@ -1,0 +1,2 @@
+kernel/drivers/rtc/rtc-msp430.ko
+kernel/drivers/rtc/rtc-ricoh619.ko

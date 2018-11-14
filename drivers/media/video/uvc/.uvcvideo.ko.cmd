@@ -1,0 +1,1 @@
+cmd_drivers/media/video/uvc/uvcvideo.ko := /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL -r  -T /home/ridi/p123/p123/kernel_imx/scripts/module-common.lds --build-id  -o drivers/media/video/uvc/uvcvideo.ko drivers/media/video/uvc/uvcvideo.o drivers/media/video/uvc/uvcvideo.mod.o

@@ -1,0 +1,2 @@
+kernel/drivers/mxc/thermal/thermal.ko
+kernel/drivers/mxc/thermal/cooling.ko

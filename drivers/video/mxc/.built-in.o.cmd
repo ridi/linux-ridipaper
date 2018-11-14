@@ -1,0 +1,1 @@
+cmd_drivers/video/mxc/built-in.o :=  /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL    -r -o drivers/video/mxc/built-in.o drivers/video/mxc/mxc_epdc_fb.o drivers/video/mxc/mxc_epdc_eink.o drivers/video/mxc/lk_tps65185.o drivers/video/mxc/lk_fp9928.o drivers/video/mxc/lk_sy7636.o drivers/video/mxc/fake_s1d13522.o drivers/video/mxc/epdfb_dc.o 

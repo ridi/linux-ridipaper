@@ -1,0 +1,1 @@
+cmd_drivers/net/wireless/rtl8822bs/8822bs.ko := /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL -r  -T /home/ridi/p123/p123/kernel_imx/scripts/module-common.lds --build-id  -o drivers/net/wireless/rtl8822bs/8822bs.ko drivers/net/wireless/rtl8822bs/8822bs.o drivers/net/wireless/rtl8822bs/8822bs.mod.o

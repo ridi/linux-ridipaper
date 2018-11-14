@@ -1,0 +1,2 @@
+kernel/arch/arm/mach-mx6/usb_dr.ko
+kernel/arch/arm/mach-mx6/mx6_bt_rfkill.ko

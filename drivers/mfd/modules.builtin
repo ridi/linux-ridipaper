@@ -1,0 +1,4 @@
+kernel/drivers/mfd/pfuze-core.ko
+kernel/drivers/mfd/mfd-core.ko
+kernel/drivers/mfd/mxc-hdmi-core.ko
+kernel/drivers/mfd/max17135-core.ko

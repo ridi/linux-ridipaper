@@ -1,0 +1,12 @@
+kernel/drivers/input/touchscreen/zforce_i2c.ko
+kernel/drivers/input/touchscreen/elan_touch_i2c.ko
+kernel/drivers/input/touchscreen/wacom_i2c.ko
+kernel/drivers/input/touchscreen/waltop_i2c.ko
+kernel/drivers/input/touchscreen/hanvon_i2c.ko
+kernel/drivers/input/touchscreen/cyttsp5.ko
+kernel/drivers/input/touchscreen/cyttsp5_i2c.ko
+kernel/drivers/input/touchscreen/cyttsp5_loader.ko
+kernel/drivers/input/touchscreen/gt9xx.ko
+kernel/drivers/input/touchscreen/gt9xx_update.ko
+kernel/drivers/input/touchscreen/goodix_tool.ko
+kernel/drivers/input/touchscreen/wacom_i2c.ko

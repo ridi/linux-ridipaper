@@ -1,0 +1,1 @@
+cmd_drivers/usb/otg/built-in.o :=  /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL    -r -o drivers/usb/otg/built-in.o drivers/usb/otg/otg.o drivers/usb/otg/otg-wakelock.o drivers/usb/otg/otg_id.o drivers/usb/otg/fsl_otg_arc.o 

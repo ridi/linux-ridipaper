@@ -1,0 +1,1 @@
+cmd_drivers/dma/built-in.o :=  /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL    -r -o drivers/dma/built-in.o drivers/dma/dmaengine.o drivers/dma/pxp/built-in.o drivers/dma/imx-sdma.o 

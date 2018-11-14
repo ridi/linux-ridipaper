@@ -1,0 +1,3 @@
+kernel/sound/soc/codecs/snd-soc-mxc-hdmi.ko
+kernel/sound/soc/codecs/snd-soc-mxc-spdif.ko
+kernel/sound/soc/codecs/snd-soc-alc5640.ko

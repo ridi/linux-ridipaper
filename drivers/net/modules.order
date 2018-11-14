@@ -1,0 +1,5 @@
+kernel/drivers/net/wireless/bcmdhd/bcmdhd.ko
+kernel/drivers/net/wireless/rtl8189fs/8189fs.ko
+kernel/drivers/net/wireless/rtl8821cs/8821cs.ko
+kernel/drivers/net/wireless/rtl8822bs/8822bs.ko
+kernel/drivers/net/wireless/rtl8723ds/8723ds.ko

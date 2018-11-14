@@ -1,0 +1,1 @@
+cmd_drivers/switch/built-in.o :=  /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL    -r -o drivers/switch/built-in.o drivers/switch/switch_class.o drivers/switch/switch_gpio.o 

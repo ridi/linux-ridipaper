@@ -1,0 +1,4 @@
+kernel/drivers/hwmon/hwmon.ko
+kernel/drivers/hwmon/max17135-hwmon.ko
+kernel/drivers/hwmon/mag3110.ko
+kernel/drivers/hwmon/mma8x5x.ko

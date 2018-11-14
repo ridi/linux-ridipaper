@@ -1,0 +1,5 @@
+kernel/drivers/regulator/fixed.ko
+kernel/drivers/regulator/pfuze100-regulator.ko
+kernel/drivers/regulator/anatop-regulator.ko
+kernel/drivers/regulator/max17135-regulator.ko
+kernel/drivers/regulator/ricoh619-regulator.ko

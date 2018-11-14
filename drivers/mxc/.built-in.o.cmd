@@ -1,0 +1,1 @@
+cmd_drivers/mxc/built-in.o :=  /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL    -r -o drivers/mxc/built-in.o drivers/mxc/ipu3/built-in.o drivers/mxc/vpu/built-in.o drivers/mxc/security/built-in.o drivers/mxc/asrc/built-in.o drivers/mxc/mlb/built-in.o drivers/mxc/gpu-viv/built-in.o drivers/mxc/thermal/built-in.o drivers/mxc/mipi/built-in.o 

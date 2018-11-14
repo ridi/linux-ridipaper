@@ -1,0 +1,1 @@
+cmd_drivers/net/wireless/rtl8189fs/8189fs.ko := /home/ridi/p123/p123/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-ld -EL -r  -T /home/ridi/p123/p123/kernel_imx/scripts/module-common.lds --build-id  -o drivers/net/wireless/rtl8189fs/8189fs.ko drivers/net/wireless/rtl8189fs/8189fs.o drivers/net/wireless/rtl8189fs/8189fs.mod.o

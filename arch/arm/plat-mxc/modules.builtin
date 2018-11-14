@@ -1,0 +1,5 @@
+kernel/arch/arm/plat-mxc/pwm.ko
+kernel/arch/arm/plat-mxc/cpufreq.ko
+kernel/arch/arm/plat-mxc/utmixc.ko
+kernel/arch/arm/plat-mxc/serialxc.ko
+kernel/arch/arm/plat-mxc/usb_hsic_xcvr.ko
