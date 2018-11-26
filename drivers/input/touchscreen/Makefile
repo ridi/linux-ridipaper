@@ -129,4 +129,4 @@ obj-$(CONFIG_TOUCHSCREEN_GOODIX_TOUCH) += gt9xx.o gt9xx_update.o goodix_tool.o
 obj-$(CONFIG_TOUCHSCREEN_WACOM_I2C)	+= wacom_i2c.o
 # focaltech_gesture.o
 obj-y   += kx122.o
-obj-y	+= mma8652.o
+#obj-y	+= mma8652.o

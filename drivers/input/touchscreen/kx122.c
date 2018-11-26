@@ -61,8 +61,8 @@
 #define MAX_POLL_RATE_MS 1000
 
 /* input dev names */
-#define KX122_INPUT_DEV_NAME "kx122-accel"
-#define KX112_INPUT_DEV_NAME "kx112-accel"
+#define KX122_INPUT_DEV_NAME "kionix_accel"
+#define KX112_INPUT_DEV_NAME "kx112_accel"
 
 /* Driver state bits */
 #define KX122_STATE_STANDBY 0
@@ -410,7 +410,6 @@ static void kx122_work_func(struct work_struct *work)
 	int s2_status,cur_pos;
 	s2_status = kx122_reg_read_byte(g_kx122_data, KX122_INS2);	
 
-
 	if(s2_status & KX122_INS2_TPS)
 	{
 		cur_pos = kx122_reg_read_byte(g_kx122_data, KX122_TSCP);
@@ -632,6 +631,7 @@ static irqreturn_t kx122_irq_handler(int irq, void *dev)
 
 	//s1_status = kx122_reg_read_byte(sdata, KX122_INS1);
 	s2_status = kx122_reg_read_byte(sdata, KX122_INS2);
+	//printk(KERN_INFO"Kionix debug +++ interrupt source is %d +++\n", s2_status);
 	//s3_status = kx122_reg_read_byte(sdata, KX122_INS3);
 
 	if (s2_status <= 0) {
@@ -991,7 +991,7 @@ static int kx122_strm_report_data(struct kx122_data *sdata)
 	int err;
 	int xyz[3];
 	ktime_t ts;
-
+	//printk(KERN_INFO"Kionix debug +++report - read_xyz+++\n");
 	err = kx122_data_read_xyz(sdata, xyz);
 
 	if (err) {
@@ -1216,18 +1216,18 @@ static int kx122_data_read_xyz(struct kx122_data *sdata, int *xyz)
 
 	if (err)
 		return err;
-
+	//printk(KERN_INFO"Kionix debug +++ read_xyz+++ %d %d %d\n",raw_xyz[0], raw_xyz[1], raw_xyz[2]);
 	raw_xyz[0] = (s16) le16_to_cpu( raw_xyz[0] );
 	raw_xyz[1] = (s16) le16_to_cpu( raw_xyz[1] );
 	raw_xyz[2] = (s16) le16_to_cpu( raw_xyz[2] );
-
+	//printk(KERN_INFO"Kionix debug +++ read_xyz PAT2+++ %d %d %d\n",raw_xyz[0], raw_xyz[1], raw_xyz[2]);
 	xyz[0] = ((sdata->pdata.x_negate) ? (-raw_xyz[sdata->pdata.x_map])
 		   : (raw_xyz[sdata->pdata.x_map]));
 	xyz[1] = ((sdata->pdata.y_negate) ? (-raw_xyz[sdata->pdata.y_map])
 		   : (raw_xyz[sdata->pdata.y_map]));
 	xyz[2] = ((sdata->pdata.z_negate) ? (-raw_xyz[sdata->pdata.z_map])
 		   : (raw_xyz[sdata->pdata.z_map]));
-
+	//printk(KERN_INFO"Kionix debug +++ read_xyz FINAL+++ %d %d %d\n",xyz[0], xyz[1], xyz[2]);
 	return 0;
 }
 
@@ -1283,7 +1283,7 @@ static void kx122_input_report_xyz(struct input_dev *dev, int *xyz, ktime_t ts)
 #ifdef DEBUG_XYZ_DATA
 	//__debug("x,y,z,ts:, %d, %d, %d, %lld \n", xyz[0], xyz[1], xyz[2],
 	//	ktime_to_ms(ts) );
-	printk(KERN_INFO"x,y,z,ts:, %d, %d, %d, %lld \n", xyz[0], xyz[1], xyz[2], ktime_to_ms(ts) );
+	//printk(KERN_INFO"Kionix debug x,y,z,ts:, %d, %d, %d, %lld \n", xyz[0], xyz[1], xyz[2], ktime_to_ms(ts) );
 #endif
 	input_report_abs(dev, ABS_X, xyz[0]);
 	input_report_abs(dev, ABS_Y, xyz[1]);
@@ -2048,7 +2048,7 @@ static int kx122_parse_dt(struct kx122_data *sdata, struct device *dev)
 		temp_val = 2;
 	}
 	sdata->pdata.z_map = (u8) temp_val;
-
+	printk(KERN_INFO"Kionix debug +++ map+++ %d %d %d\n",sdata->pdata.x_map, sdata->pdata.y_map, sdata->pdata.z_map);
 	err = of_property_read_u32(dev->of_node, "kionix,x-negate", &temp_val);
 	if (err) {
 		dev_err(dev, "Unable to read property x-negate. Use default 0.\n");
@@ -2069,7 +2069,7 @@ static int kx122_parse_dt(struct kx122_data *sdata, struct device *dev)
 		temp_val = 0;
 	}
 	sdata->pdata.z_negate = (u8) temp_val;
-
+	printk(KERN_INFO"Kionix debug +++ negate+++ %d %d %d\n",sdata->pdata.x_negate, sdata->pdata.y_negate, sdata->pdata.z_negate);
 	err = of_property_read_u32(dev->of_node, "kionix,g-range", &temp_val);
 	if (err) {
 		dev_err(dev, "Unable to read property g-range. Use default 8g\n");
@@ -2408,10 +2408,14 @@ static int kx122_probe(struct i2c_client *client,
 
 	/* NOTE; by default all interrupts are routed to int1 */
 	/* setup irq handler */
+	printk(KERN_INFO"Kionix debug +++setup IRQ+++\n");
 	if (sdata->irq1) {
 		INIT_DELAYED_WORK(&kx122_delay_work, kx122_work_func);
-		//err = request_threaded_irq(sdata->irq1, NULL,kx122_irq_handler, IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME, sdata);
-		err = request_irq(sdata->irq1,kx122_interrupt/*kx122_irq_handler*/,IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
+		printk(KERN_INFO"Kionix debug +++setup irq1+++\n");
+		//INIT_DELAYED_WORK(&kx122_delay_work, kx122_drdy_func);
+		err = request_threaded_irq(sdata->irq1, NULL,kx122_irq_handler, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME, sdata);
+		//err = request_irq(sdata->irq1,kx122_interrupt/*kx122_irq_handler*/,IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
+		//err = request_irq(sdata->irq1,kx122_interrupt/*kx122_irq_handler*/,IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
 		if (err) {
 			dev_err(&client->dev, "unable to request irq1\n");
 			cancel_delayed_work_sync (&kx122_delay_work);
@@ -2423,6 +2427,7 @@ static int kx122_probe(struct i2c_client *client,
 	}
 
 	if (sdata->irq2) {
+		printk(KERN_INFO"Kionix debug +++setup irq2+++\n");
 		err = request_threaded_irq(sdata->irq2, NULL,
 				kx122_irq_handler, IRQF_TRIGGER_RISING | IRQF_ONESHOT,
 				KX122_NAME, sdata);
@@ -2463,17 +2468,24 @@ static int kx122_probe(struct i2c_client *client,
 
 	/* set 16 data bit resolution */
 	sdata->data_res = 8;	// 16 , 8 : low power
-
+	sdata->pdata.x_map = 0;
+	sdata->pdata.y_map = 1;
+	sdata->pdata.z_map = 2;
+	sdata->pdata.y_negate = -1; //based on Netronix device
 	// Set Register
 	if(80 == gptHWCFG->m_val.bPCB) { // E60QU4
-		sdata->inc1 = 0 |  KX122_INC1_IEN1 | KX122_INC1_PWSEL1_2XOSA | KX122_INC1_IEL1 ;	// active low
+		printk(KERN_INFO"Kionix debug +++setup active low+++\n");
+		//sdata->inc1 = 0 |  KX122_INC1_IEN1 | KX122_INC1_PWSEL1_2XOSA | KX122_INC1_IEL1 ;	// active low
+		sdata->inc1 = 0 |  KX122_INC1_IEN1 | KX122_INC1_PWSEL1_2XOSA ;	// active low and latch mode
 	}
 	else{
 		sdata->inc1 = KX122_INC1_IEA1|  KX122_INC1_IEN1;	// active high
 	}
-	sdata->inc4 = KX122_INC4_TPI1 /*| KX122_INC4_WUFI1*/;
+	//sdata->inc4 = KX122_INC4_TPI1 /*| KX122_INC4_WUFI1*/;
+	sdata->inc4 = KX122_INC4_DRDYI1 /*| KX122_INC4_WUFI1*/;
 	// CNTL1 controls the main feature set of the accelerometer
-	sdata->_CNTL1 = KX122_CNTL1_TPE /*| KX122_CNTL1_WUFE*/ | KX122_CNTL1_GSEL_2G ;
+	sdata->_CNTL1 = KX122_CNTL1_DRDYE /*| KX122_CNTL1_WUFE*/ | KX122_CNTL1_GSEL_2G ;
+	//sdata->_CNTL1 = KX122_CNTL1_TPE /*| KX122_CNTL1_WUFE*/ | KX122_CNTL1_GSEL_2G ;
 	sdata->_BUF_CNTL2 = 0;
 	// Write Register
 	kx122_set_reg(sdata);
@@ -2527,6 +2539,12 @@ static int kx122_probe(struct i2c_client *client,
        	gRotate_Angle = EBRMAIN_ROTATE_R_90 ;
 
 	kx122_enable_irq(sdata);
+	// Print Register
+	val = kx122_reg_read_byte(sdata, KX122_INT_REL); //release Interrupt
+	val = kx122_reg_read_byte(sdata, KX122_CNTL1);
+	printk(KERN_ERR"[kx122-CNTL1]:%x \n",val);
+	val = kx122_reg_read_byte(sdata, KX122_ODCNTL);
+	printk(KERN_ERR"[kx122-ODCNTL]:%x \n",val);
 	printk(KERN_ERR"[%s_%d] success \n",__FUNCTION__,__LINE__);
 	return 0;
 
@@ -2642,8 +2660,9 @@ static int kx122_resume(struct device *dev)
 	if (gSleep_Mode_Suspend) {
 		int ret; 
 		kx122_set_reg(pdata);
-
-		ret = request_irq(pdata->irq1,kx122_interrupt,IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
+		err = request_threaded_irq(pdata->irq1, NULL,kx122_irq_handler, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME, pdata);
+		//ret = request_irq(pdata->irq1,kx122_interrupt,IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
+		//err = request_irq(pdata->irq1,kx122_interrupt,IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
 		if (err) {
 			dev_err(&client->dev, "unable to request irq1\n");
 			cancel_delayed_work_sync (&kx122_delay_work);

@@ -36,3 +36,4 @@ endif
 obj-$(CONFIG_FB_MXC_SIPIX_PANEL)            += mxc_spdc_fb.o
 obj-$(CONFIG_FB_MXC_ELCDIF_FB)		    += mxc_elcdif_fb.o
 obj-y += lk_tps65185.o lk_fp9928.o lk_sy7636.o fake_s1d13522.o epdfb_dc.o
+
