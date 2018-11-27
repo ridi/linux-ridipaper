@@ -126,6 +126,7 @@ struct kx122_data {
 	u8 g_range;
 	u8 data_res;
 	u8 wai;
+	u8 odcntl;
 
 	u8 _CNTL1;
 	u8 _BUF_CNTL2;
@@ -1710,6 +1711,9 @@ static struct attribute_group kx122_accel_attribute_group = {
 static int kx122_set_reg(struct kx122_data *sdata)
 {
 	int err;
+	err = kx122_reg_write_byte(sdata, KX122_ODCNTL, sdata->odcntl);
+	if(err)
+		printk(KERN_ERR"[%s_%d] Write ODCNTL Failed\n",__FUNCTION__,__LINE__);
 	err = kx122_reg_write_byte(sdata, KX122_INC1, sdata->inc1);
 	if(err)
 		printk(KERN_ERR"[%s_%d] Write INC1 Failed\n",__FUNCTION__,__LINE__);
@@ -2410,15 +2414,14 @@ static int kx122_probe(struct i2c_client *client,
 	/* setup irq handler */
 	printk(KERN_INFO"Kionix debug +++setup IRQ+++\n");
 	if (sdata->irq1) {
-		INIT_DELAYED_WORK(&kx122_delay_work, kx122_work_func);
+		//INIT_DELAYED_WORK(&kx122_delay_work, kx122_work_func);
 		printk(KERN_INFO"Kionix debug +++setup irq1+++\n");
-		//INIT_DELAYED_WORK(&kx122_delay_work, kx122_drdy_func);
 		err = request_threaded_irq(sdata->irq1, NULL,kx122_irq_handler, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME, sdata);
 		//err = request_irq(sdata->irq1,kx122_interrupt/*kx122_irq_handler*/,IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
 		//err = request_irq(sdata->irq1,kx122_interrupt/*kx122_irq_handler*/,IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
 		if (err) {
 			dev_err(&client->dev, "unable to request irq1\n");
-			cancel_delayed_work_sync (&kx122_delay_work);
+			//cancel_delayed_work_sync (&kx122_delay_work);
 			goto free_sysfs_accel;
 		}
 
@@ -2472,6 +2475,7 @@ static int kx122_probe(struct i2c_client *client,
 	sdata->pdata.y_map = 1;
 	sdata->pdata.z_map = 2;
 	sdata->pdata.y_negate = -1; //based on Netronix device
+	sdata->odcntl = 0; //setup data rate as 12.5 Hz
 	// Set Register
 	if(80 == gptHWCFG->m_val.bPCB) { // E60QU4
 		printk(KERN_INFO"Kionix debug +++setup active low+++\n");
@@ -2642,8 +2646,10 @@ static int kx122_suspend(struct device *dev)
     struct kx122_data *pdata = i2c_get_clientdata(client);	
 
 	msleep(5);
+	//printk("kx122_suspend,suspend mode is %d\n",gSleep_Mode_Suspend);
 	if (gSleep_Mode_Suspend) {
-		free_irq(pdata->irq1, KX122_NAME);
+		//free_irq(pdata->irq1, KX122_NAME);
+		free_irq(pdata->irq1, pdata);
 	}
 	else {
 		printk("kx122_suspend,enable irq wakeup source %d\n",pdata->irq1);
@@ -2656,16 +2662,16 @@ static int kx122_resume(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
 	struct kx122_data *pdata = i2c_get_clientdata(client);
-	int err ;
+	int err,rel_status ;
+	rel_status = kx122_reg_read_byte(pdata, KX122_INT_REL); //release interrupt signal
 	if (gSleep_Mode_Suspend) {
 		int ret; 
 		kx122_set_reg(pdata);
 		err = request_threaded_irq(pdata->irq1, NULL,kx122_irq_handler, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME, pdata);
 		//ret = request_irq(pdata->irq1,kx122_interrupt,IRQF_TRIGGER_RISING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
-		//err = request_irq(pdata->irq1,kx122_interrupt,IRQF_TRIGGER_FALLING | IRQF_ONESHOT,KX122_NAME,KX122_NAME);
 		if (err) {
 			dev_err(&client->dev, "unable to request irq1\n");
-			cancel_delayed_work_sync (&kx122_delay_work);
+			//cancel_delayed_work_sync (&kx122_delay_work);
 			printk(KERN_ERR"[%s_%d] Request irq failed \n",__FUNCTION__,__LINE__);
 		}
 		kx122_enable_irq(pdata);
