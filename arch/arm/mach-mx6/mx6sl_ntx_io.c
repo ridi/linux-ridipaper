@@ -621,7 +621,7 @@ void led_green (int isOn)
 
 	if(0x03!=gptHWCFG->m_val.bUIConfig) {
 		// do not check charging status in MP/RD mode 
-		if(9!=gptHWCFG->m_val.bCustomer) {
+		if(9!=gptHWCFG->m_val.bCustomer&&31!=gptHWCFG->m_val.bCustomer) {
 			if(gMX6SL_ON_LED==gMX6SL_CHG_LED&&mxc_usb_plug_getstatus()) {
 				// skip control charge led while charging .
 				return ;
@@ -671,7 +671,7 @@ void led_red (int isOn) {
 		else {
 			if(0x03!=gptHWCFG->m_val.bUIConfig) {
 				// do not check charging status in MP/RD mode 
-				if(9!=gptHWCFG->m_val.bCustomer) {
+				if(9!=gptHWCFG->m_val.bCustomer&&31!=gptHWCFG->m_val.bCustomer) {
 					if(mxc_usb_plug_getstatus()) {
 						// skip control charge led while charging .
 						break ;
@@ -3014,7 +3014,10 @@ void ntx_gpio_suspend (void)
 
 
 	led_blue(0);
-	led_green(0);
+//	led_green(0);
+	if(31!=gptHWCFG->m_val.bCustomer) {
+		led_green(0);
+	}
 
 	gpiofn_suspend();
 
@@ -3336,7 +3339,8 @@ void ntx_gpio_suspend (void)
 			else if ( (*p) == MX6SL_PAD_SD2_DAT6__GPIO_4_29 ||
 					(*p) == MX6SL_PAD_SD1_DAT6__GPIO_5_7  ||
 					((IMX_GPIO_NR(5,13)==gMX6SL_ON_LED)&&((*p)==MX6SL_PAD_SD1_DAT2__GPIO_5_13)) ||
-					((IMX_GPIO_NR(5,7)==gMX6SL_ON_LED)&&((*p)==MX6SL_PAD_SD1_DAT6__GPIO_5_7)) || 
+					((IMX_GPIO_NR(5,7)==gMX6SL_ON_LED)&&((*p)==MX6SL_PAD_SD1_DAT6__GPIO_5_7)) ||
+					((IMX_GPIO_NR(5,10)==gMX6SL_ON_LED)&&((*p)==MX6SL_PAD_SD1_DAT7__GPIO_5_10)) || 
 					((IMX_GPIO_NR(4,22)==gMX6SL_ON_LED)&&((*p)==MX6SL_PAD_FEC_TX_EN__GPIO_4_22)) )
 			{
 				// pull up
@@ -3497,6 +3501,11 @@ void ntx_gpio_suspend (void)
 			else if (IMX_GPIO_NR(4,12)==gMX6SL_ON_LED) {
 				dwDisableBit = (unsigned long)(1<<12); // GP?_12 .
 				ntx_gpio_insuspend_dir[3] &= ~dwDisableBit; // GP4 .
+			}
+			else if (IMX_GPIO_NR(5,10)==gMX6SL_ON_LED) {
+				//printk("gp5_10 green led skip setting as input\n");
+				dwDisableBit = (unsigned long)(1<<10); // GP?_10 .
+				ntx_gpio_insuspend_dir[4] &= ~dwDisableBit; // GP5 .
 			}
 
 			if (2 == gptHWCFG->m_val.bAudioCodec) {	// ALC5640 codec
