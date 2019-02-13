@@ -3363,11 +3363,11 @@ int ntx_wifi_power_ctrl (int isWifiEnable)
 	printk("%s(%d).\n",__FUNCTION__,isWifiEnable);
 	
 	mutex_lock(&ntx_wifi_power_mutex);
-    if(isWifiEnable){  // TURN ON WIFI
-		if(gi_wifi_power_status==0){
-        	wifi_card_enable();
-        }
-        set_wifi_pins(ON);
+    	if(isWifiEnable){  // TURN ON WIFI
+		//if(gi_wifi_power_status==0){
+        	//	wifi_card_enable();
+        	//}
+        	set_wifi_pins(ON);
 
 		if (11==gptHWCFG->m_val.bWifi || 12==gptHWCFG->m_val.bWifi || 14==gptHWCFG->m_val.bWifi) {
 			gpio_direction_output (gMX6SL_WIFI_DIS, 1);
@@ -3375,7 +3375,10 @@ int ntx_wifi_power_ctrl (int isWifiEnable)
 #ifdef _WIFI_ALWAYS_ON_
 		enable_irq_wake(gpio_to_irq(gMX6SL_WIFI_INT));
 #endif
-        gi_wifi_power_status |= 1;
+		if(gi_wifi_power_status==0){
+			wifi_card_enable();
+		}
+        	gi_wifi_power_status |= 1;
     } else {   // TURN OFF WIFI
 		if((gi_wifi_power_status&2)==0) {
             if (11 == gptHWCFG->m_val.bWifi || 12 == gptHWCFG->m_val.bWifi || 14 == gptHWCFG->m_val.bWifi) {
@@ -3430,6 +3433,8 @@ int ntx_bt_power_ctrl (int isBtEnable)
 		
 		set_bt_pins(ON);        
 		gpio_direction_output (gMX6SL_BT_DIS, 1);
+		if (gpio_is_valid(gMX6SL_BT_INT))
+			gpio_direction_input (gMX6SL_BT_INT);
 #ifdef _BT_ALWAYS_ON_
        	enable_irq_wake(gpio_to_irq(gMX6SL_BT_INT));
 #endif
@@ -3438,6 +3443,8 @@ int ntx_bt_power_ctrl (int isBtEnable)
 	} else {   //TURN OFF BT
         mutex_lock(&ntx_wifi_power_mutex);
 		gpio_direction_output (gMX6SL_BT_DIS, 0);
+		if (gpio_is_valid(gMX6SL_BT_INT))
+			gpio_direction_output (gMX6SL_BT_INT, 0);
 #ifdef _BT_ALWAYS_ON_
         disable_irq_wake(gpio_to_irq(gMX6SL_BT_INT));
 #endif
@@ -4325,6 +4332,7 @@ static void ntx_gpio_init(void)
             gMX6SL_BT_DIS = IMX_GPIO_NR(3, 31);
 		    mxc_iomux_v3_setup_pad(MX6SL_PAD_KEY_ROW4__GPIO_4_1);
             gMX6SL_WIFI_DIS = IMX_GPIO_NR(4, 1);
+		    mxc_iomux_v3_setup_pad(MX6SL_PAD_KEY_ROW5__GPIO_4_3);
 			gMX6SL_BT_INT = IMX_GPIO_NR(4, 3);
 			gpio_request (gMX6SL_BT_INT, "MX6SL_BT_INT");
             gpio_direction_input (gMX6SL_BT_INT);
