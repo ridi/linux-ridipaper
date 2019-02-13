@@ -1256,12 +1256,18 @@ static inline void ntx_epdc_set_update_dimensions(u32 width, u32 height)
 }
 static void ntx_epdc_pmic_exception(int iEvt)
 {
-	if(7==gptHWCFG->m_val.bDisplayCtrl||17==gptHWCFG->m_val.bDisplayCtrl) {
-		// MX6SL + TPS65185 .
+       if(7==gptHWCFG->m_val.bDisplayCtrl||17==gptHWCFG->m_val.bDisplayCtrl ||
+                       19==gptHWCFG->m_val.bDisplayCtrl||22==gptHWCFG->m_val.bDisplayCtrl) 
+       {
+               // MX6SL/MX6DL + TPS65185/SY7636 .
+	
 		printk(KERN_ERR"%s(%d),native_w=%d,native_h=%d\n",__FUNCTION__,iEvt,
 				(int)g_fb_data->native_width,(int)g_fb_data->native_height);
-		//if(tps65185_int_state_get()>=0) 
+		
+		if(7==gptHWCFG->m_val.bDisplayCtrl||17==gptHWCFG->m_val.bDisplayCtrl)
 		{
+			// TPS65185
+			//if(tps65185_int_state_get()>=0) 
 			tps65185_int_state_clear();
 		}
 
@@ -1390,6 +1396,11 @@ static int k_fake_s1d13522_init(unsigned char *pbInitDCbuf)
 			// MX6SL+TPS65185 || MX6DL+TPS65185 .
 			tps65185_int_callback_setup(ntx_epdc_pmic_exception);
 		}
+        else 
+        if(19==gptHWCFG->m_val.bDisplayCtrl||22==gptHWCFG->m_val.bDisplayCtrl) {
+            // MX6SL+SY7636 || MX6DL+SY7636 .
+            sy7636_int_callback_setup(ntx_epdc_pmic_exception);
+        }
 
 #ifdef LM75_ENABLED//[
 		if(gptHWCFG&&\

@@ -207,15 +207,17 @@ static void android_disable(struct android_dev *dev)
 {
 	struct usb_composite_dev *cdev = dev->cdev;
 	unsigned long flags;
-
-	spin_lock_irqsave(&cdev->lock, flags);
-	if (dev->connected) {
-		/* Cancel pending control requests */
-		usb_gadget_disconnect(cdev->gadget);
-		usb_ep_dequeue(cdev->gadget->ep0, cdev->req);
+    if ( dev->enabled ) {
+    	spin_lock_irqsave(&cdev->lock, flags);
+        if (dev->connected) {
+        	/* Cancel pending control requests */
+            usb_gadget_disconnect(cdev->gadget);
+            usb_ep_dequeue(cdev->gadget->ep0, cdev->req);
+        }
+        spin_unlock_irqrestore(&cdev->lock, flags);
+        usb_remove_config(cdev, &android_config_driver);
+        dev->enabled = false;	
 	}
-	spin_unlock_irqrestore(&cdev->lock, flags);
-	usb_remove_config(cdev, &android_config_driver);
 }
 /*-------------------------------------------------------------------------*/
 /* Supported functions initialization */

@@ -383,6 +383,11 @@ static int _config_ricoh619_charger_params(struct device *bat_dev,int iChargerTy
 			ilim_usb = 0x30;	//1700mA
 			ichg = 0x0b; 		//1200mA
 			break;
+        case 84:  //E70Q5X
+            ilim_adp = 0x18;        //2500mA
+            ilim_usb = 0x38;        //2500mA
+            ichg = 0x51;            //100mA(full)/1800mA
+            break;
 		default:
 			ilim_adp = 0x0D;  	//1400mA
 			ilim_usb = 0x2D;  	//1400mA
@@ -545,6 +550,18 @@ static int Battery_Table(void)
 		break;
 	case 15: //PR-284983N-3000mA
 		BatteryTableFlageDef=6;
+		break;
+    case 16: //1000mA (EVE254385N)
+        BatteryTableFlageDef=7;
+        break;
+    case 17: //AVALI-C-3000mA
+        BatteryTableFlageDef=8;
+        break;
+    case 18: //AVALI-C-3400mA
+        BatteryTableFlageDef=9;
+        break;  
+	case 19: //PR-248899G-3000mA.C2
+		BatteryTableFlageDef=10;
 		break;
 	default:
 		BatteryTableFlageDef=0;
@@ -1650,6 +1667,10 @@ static int getCapFromOriTable_U10per(struct ricoh61x_battery_info *info, int vol
 			ocv_table = ocv_table_for_1500mAh;
 	else if (15 == gptHWCFG->m_val.bBattery)		// PR-248899G-3000mA
 			ocv_table = ocv_table_for_3000mAh_coff36;
+    else if (17 == gptHWCFG->m_val.bBattery)                // //AVALI-C-3000mA
+            ocv_table = ocv_table_for_3000mAh_coff36;// Need to be change
+    else if (18 == gptHWCFG->m_val.bBattery)                //AVALI-C-3400mA
+            ocv_table = ocv_table_for_3000mAh_coff36; // Need to be change
 	else {
 		ocv_table = ocv_table_regular;
 	}

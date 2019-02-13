@@ -1430,7 +1430,9 @@ static int do_mode_sense(struct fsg_common *common, struct fsg_buffhd *bh)
 	return len;
 }
 
+#ifdef CONFIG_USB_G_ANDROID
 extern void send_usb_umount_uevent();
+#endif
 
 static int do_start_stop(struct fsg_common *common)
 {
@@ -1489,8 +1491,10 @@ static int do_start_stop(struct fsg_common *common)
 	up_write(&common->filesem);
 	down_read(&common->filesem);
 
+#ifdef CONFIG_USB_G_ANDROID
 	//Terry add 20140115 : When host eject UMS, pass uevent to userspace with host_eject=true.
 	send_usb_umount_uevent();
+#endif
 
 	return common->ops && common->ops->post_eject
 		? min(0, common->ops->post_eject(common, curlun,

@@ -996,7 +996,8 @@ static EN_EPSON_ERROR_CODE S1D13522_reg_write(u16 wIndex, u16 wValue)
 				ASSERT(gptHWCFG);
 				if(0==gptHWCFG->m_val.bDisplayPanel||3==gptHWCFG->m_val.bDisplayPanel||\
 						6==gptHWCFG->m_val.bDisplayPanel||8==gptHWCFG->m_val.bDisplayPanel||\
-						9==gptHWCFG->m_val.bDisplayPanel||16==gptHWCFG->m_val.bDisplayPanel)
+						9==gptHWCFG->m_val.bDisplayPanel||16==gptHWCFG->m_val.bDisplayPanel||\
+                        35==gptHWCFG->m_val.bDisplayPanel   )
 				{
 					// Left Out EPD Panel ...
 					GALLEN_DBGLOCAL_RUNLOG(24);

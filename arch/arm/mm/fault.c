@@ -24,8 +24,25 @@
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>
 
-#include <asm/cputype.h>
+//#include <asm/cputype.h>
 #include "fault.h"
+
+#define __ACCESS_CP15(CRn, Op1, CRm, Op2)      \
+       "mrc", "mcr", __stringify(p15, Op1, %0, CRn, CRm, Op2), u32
+#define __ACCESS_CP15_64(Op1, CRm)             \
+       "mrrc", "mcrr", __stringify(p15, Op1, %Q0, %R0, CRm), u64
+
+#define __read_sysreg(r, w, c, t) ({                           \
+       t __val;                                                \
+       asm volatile(r " " c : "=r" (__val));                   \
+       __val;                                                  \
+})
+#define read_sysreg(...)               __read_sysreg(__VA_ARGS__)
+
+#define __write_sysreg(v, r, w, c, t)  asm volatile(w " " c : : "r" ((t)(v)))
+#define write_sysreg(v, ...)           __write_sysreg(v, __VA_ARGS__)
+
+#define BPIALL                         __ACCESS_CP15(c7, 0, c5, 6)
 
 /*
  * Fault status register encodings.  We steal bit 31 for our own purposes.
@@ -378,31 +395,26 @@ no_context:
 static int
 do_pabt_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 {
-	if (addr > TASK_SIZE) {
-		switch(read_cpuid_id()&0xff00fff0) {
-		case 0x4100c080:	// ARM_CPU_PART_CORTEX_A8
-		case 0x4100c090:	// ARM_CPU_PART_CORTEX_A9
-		case 0x4100c0d0:	// ARM_CPU_PART_CORTEX_A12
-		case 0x4100c0e0:	// ARM_CPU_PART_CORTEX_A17
-			write_sysreg(0, BPIALL);
-			break;
-		}
-	}
+       if (addr > TASK_SIZE)
+               /* Assume we are running on Cortex-A9 */
+               write_sysreg(0, BPIALL);
 
-	return do_page_fault(addr, fsr, regs);
+       return do_page_fault(addr, fsr, regs);
 }
+
 #else					/* CONFIG_MMU */
 static int
 do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 {
 	return 0;
 }
-static int
 
+static int
 do_pabt_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 {
-	return 0;
+       return 0;
 }
+
 #endif					/* CONFIG_MMU */
 
 /*
@@ -527,7 +539,7 @@ static struct fsr_info {
 	{ do_bad,		SIGBUS,	 0,		"external abort on linefetch"	   },
 	{ do_translation_fault,	SIGSEGV, SEGV_MAPERR,	"section translation fault"	   },
 	{ do_bad,		SIGBUS,	 0,		"external abort on linefetch"	   },
-	{ do_page_fault,	SIGSEGV, SEGV_MAPERR,	"page translation fault"	   },
+	{ do_pabt_page_fault,   SIGSEGV, SEGV_MAPERR,   "page translation fault"           },
 	{ do_bad,		SIGBUS,	 0,		"external abort on non-linefetch"  },
 	{ do_bad,		SIGSEGV, SEGV_ACCERR,	"section domain fault"		   },
 	{ do_bad,		SIGBUS,	 0,		"external abort on non-linefetch"  },
@@ -535,7 +547,7 @@ static struct fsr_info {
 	{ do_bad,		SIGBUS,	 0,		"external abort on translation"	   },
 	{ do_sect_fault,	SIGSEGV, SEGV_ACCERR,	"section permission fault"	   },
 	{ do_bad,		SIGBUS,	 0,		"external abort on translation"	   },
-	{ do_page_fault,	SIGSEGV, SEGV_ACCERR,	"page permission fault"		   },
+	{ do_pabt_page_fault,   SIGSEGV, SEGV_ACCERR,   "page permission fault"        },
 	/*
 	 * The following are "imprecise" aborts, which are signalled by bit
 	 * 10 of the FSR, and may not be recoverable.  These are only
@@ -603,7 +615,7 @@ static struct fsr_info ifsr_info[] = {
 	{ do_bad,		SIGBUS,  0,		"unknown 4"			   },
 	{ do_translation_fault,	SIGSEGV, SEGV_MAPERR,	"section translation fault"	   },
 	{ do_bad,		SIGSEGV, SEGV_ACCERR,	"page access flag fault"	   },
-	{ do_pabt_page_fault,	SIGSEGV, SEGV_MAPERR,	"page translation fault"	   },
+	{ do_page_fault,        SIGSEGV, SEGV_MAPERR,   "page translation fault"           },
 	{ do_bad,		SIGBUS,	 0,		"external abort on non-linefetch"  },
 	{ do_bad,		SIGSEGV, SEGV_ACCERR,	"section domain fault"		   },
 	{ do_bad,		SIGBUS,  0,		"unknown 10"			   },
@@ -611,7 +623,7 @@ static struct fsr_info ifsr_info[] = {
 	{ do_bad,		SIGBUS,	 0,		"external abort on translation"	   },
 	{ do_sect_fault,	SIGSEGV, SEGV_ACCERR,	"section permission fault"	   },
 	{ do_bad,		SIGBUS,	 0,		"external abort on translation"	   },
-	{ do_pabt_page_fault,	SIGSEGV, SEGV_ACCERR,	"page permission fault"		   },
+	{ do_page_fault,        SIGSEGV, SEGV_ACCERR,   "page permission fault"            },
 	{ do_bad,		SIGBUS,  0,		"unknown 16"			   },
 	{ do_bad,		SIGBUS,  0,		"unknown 17"			   },
 	{ do_bad,		SIGBUS,  0,		"unknown 18"			   },

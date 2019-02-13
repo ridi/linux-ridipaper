@@ -218,7 +218,8 @@ struct mxcfb_csc_matrix {
 #define MXCFB_GET_PWRDOWN_DELAY		_IOR('F', 0x31, int32_t)
 #define MXCFB_SET_UPDATE_SCHEME		_IOW('F', 0x32, __u32)
 #define MXCFB_GET_WORK_BUFFER		_IOWR('F', 0x34, unsigned long)
-#define MXCFB_WAIT_WORK_BUFFER_FREE		_IO('F', 0x100)
+//#define MXCFB_WAIT_WORK_BUFFER_FREE		_IO('F', 0x100)
+#define MXCFB_WAIT_WORK_BUFFER_FREE            _IO('F', 0x50)
 #define MXCFB_WAIT_FOR_FRAMEEND		_IOWR('F', 0x101, unsigned long)
 
 #ifdef __KERNEL__

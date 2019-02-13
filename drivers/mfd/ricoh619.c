@@ -865,6 +865,28 @@ static ssize_t regiset_write(struct device *dev, struct device_attribute *attr,
 	return strlen(buf);
 }
 
+static ssize_t chgiset_read(struct device *dev, struct device_attribute *attr,char *buf)
+{
+       char reg_val;
+       __ricoh61x_read(ricoh61x_i2c_client, 0xB8, &reg_val);
+       sprintf (buf, "reg 0xB8=0x%02X\n", reg_val);
+       return strlen(buf);
+}
+
+static ssize_t chgiset_write(struct device *dev, struct device_attribute *attr,
+                      const char *buf, size_t count)
+{
+       int val = simple_strtoul(buf,NULL,0);
+       if (0xFF < val)
+               sprintf (buf, "input error.\n");
+       else {
+               sprintf (buf, "reg 0xB8=0x%02X\n", val);
+ 
+               __ricoh61x_write(ricoh61x_i2c_client, 0xB8, val);
+       }
+       return strlen(buf);
+}
+
 static ssize_t chgctl1_read(struct device *dev, struct device_attribute *attr,char *buf)
 {
 	char reg_val;
@@ -889,6 +911,7 @@ static ssize_t chgctl1_write(struct device *dev, struct device_attribute *attr,
 
 static DEVICE_ATTR(chgctl1, 0666, chgctl1_read, chgctl1_write);
 static DEVICE_ATTR(regiset, 0666, regiset_read, regiset_write);
+static DEVICE_ATTR(chgiset, 0666, chgiset_read, chgiset_write);
 
 static const struct file_operations debug_fops = {
 	.open		= dbg_ricoh_open,
@@ -906,6 +929,10 @@ static void __init ricoh61x_debuginit(struct ricoh61x *ricoh)
 	if (device_create_file(ricoh->dev,&dev_attr_chgctl1)) {
 		pr_err("Can't create ricoh ntx attr sysfs !\n");
 	}
+    if (device_create_file(ricoh->dev,&dev_attr_chgiset)) {
+        pr_err("Can't create ricoh ntx attr sysfs !\n");
+    }
+
 }
 #else
 static void print_regs(const char *header, struct i2c_client *client,

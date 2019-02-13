@@ -173,7 +173,11 @@ static ktime_t before_eof_ktime;
 	#define DEFAULT_PANEL_HW_INIT
 //#endif//]CONFIG_ANDROID
 
-#define NUM_SCREENS_MIN	3
+#ifdef CONFIG_ANDROID//[
+	#define NUM_SCREENS_MIN        3
+#else //][! CONFIG_ANDROID
+	#define NUM_SCREENS_MIN        2
+#endif //] CONFIG_ANDROID
 
 #define EPDC_V1_NUM_LUTS	16
 #define EPDC_V1_MAX_NUM_UPDATES 20
@@ -5541,12 +5545,14 @@ static int mxc_epdc_fb_ioctl(struct fb_info *info, unsigned int cmd,
 #endif
 
 	case MXCFB_WAIT_WORK_BUFFER_FREE:
+	{
+		//printk("%s(%d)\n",__FUNCTION__,__LINE__);
 		init_completion(&g_fb_data->working_buf_compl);
 		g_fb_data->waiting_for_working_buf_compl = 1;
 		ret = wait_for_completion_timeout(&g_fb_data->working_buf_compl,
 			msecs_to_jiffies(600));
 		break;
-
+	}
 	default:GALLEN_DBGLOCAL_RUNLOG(9);
 		ret = k_fake_s1d13522_ioctl(cmd,arg);
 		break;
@@ -8637,7 +8643,7 @@ int mxc_epdc_fb_shutdown(struct platform_device *pdev)
 	}
 
 	mxc_epdc_fb_flush_updates(fb_data);
-
+    free_irq(fb_data->epdc_irq, fb_data);
 
 	//fb_data->powering_down = true;
 	//epdc_powerdown(fb_data);

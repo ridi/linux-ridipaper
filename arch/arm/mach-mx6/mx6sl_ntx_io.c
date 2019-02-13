@@ -1752,6 +1752,7 @@ static int  ioctlDriver(struct file *filp, unsigned int command, unsigned long a
 					
 		case CM_WIFI_CTRL:		
 			ntx_wifi_power_ctrl (p);
+			ntx_bt_power_ctrl (p);
 			break;	
 
 		case CM_ITE8951_POWER:		
@@ -2998,7 +2999,10 @@ void ricoh_suspend_state_sync(void)
 		sus_current = 9800;
 		hiber_current = 1053;
 		break;
-		
+    case 83://E60QTX
+        sus_current = 6241;
+        hiber_current = 931;
+        break;
 	}
 	bat_alert_req_flg = 0;	// 0:Normal, 1:Re-synchronize request from system
 }

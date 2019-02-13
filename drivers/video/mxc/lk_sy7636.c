@@ -98,6 +98,8 @@
 #define GPIO_SY7636_VCOM				IMX_GPIO_NR(2,8)
 #endif
 
+#define SY7636_ENABLE_PG_INT         1
+
 #define VIN_ON		1
 #define VIN_OFF		0
 #define EN_ON			1
@@ -174,10 +176,17 @@ typedef struct tagSY7636_data {
 	unsigned long dwTickRailPowerOnEnd;
 #endif //] USE_EPD_PWRSTAT
 
+#ifdef SY7636_ENABLE_PG_INT//[
+       struct work_struct PG_work;
+       struct workqueue_struct *PG_workqueue;
+       int iPG_IRQ;
+#endif //]SY7636_ENABLE_PG_INT
+ 
 } SY7636_data;
 
 
 static SY7636_data *gptSY7636_data ;
+static SY7636_INTEVT_CB *gpfnVDropCB;
 
 // externals ...
 extern volatile NTX_HWCONFIG *gptHWCFG;
@@ -457,7 +466,7 @@ static int _sy7636_get_reg(unsigned char bRegAddr,unsigned char *O_pbRegVal)
 			gbSY7636_REG_##_regName = bReadReg;\
 		}\
 		_wRet = (unsigned short)bReadReg;\
-		DBG_MSG("%s() : SY7636 read reg%s(%02Xh)=0x%02x\n",__FUNCTION__,\
+		DBG_MSG("%s(%d) : SY7636 read reg%s(%02Xh)=0x%02x\n",__FUNCTION__,__LINE__,\
 			#_regName,gbSY7636_REG_##_regName##_##addr,bReadReg);\
 	}\
 	_wRet;\
@@ -475,7 +484,7 @@ static int _sy7636_get_reg(unsigned char bRegAddr,unsigned char *O_pbRegVal)
 	\
 	_bFieldMask=(unsigned char)(SY7636_REG_##_regName##_##_bFieldName##_mask<<SY7636_REG_##_regName##_##_bFieldName##_lsb);\
 	_bRet = (unsigned short)((gbSY7636_REG_##_regName&_bFieldMask)>>SY7636_REG_##_regName##_##_bFieldName##_lsb);\
-	DBG_MSG("%s() : SY7636 get fld %s of reg%s(%02Xh)=0x%02x\n",__FUNCTION__,\
+	DBG_MSG("%s(%d) : SY7636 get fld %s of reg%s(%02Xh)=0x%02x\n",__FUNCTION__,__LINE__,\
 	#_bFieldName,#_regName,gbSY7636_REG_##_regName##_##addr,_bRet);\
 	_bRet;\
 })
@@ -495,6 +504,40 @@ static int _sy7636_get_reg(unsigned char bRegAddr,unsigned char *O_pbRegVal)
 		}\
 	}
 
+#ifdef SY7636_ENABLE_PG_INT //[
+static irqreturn_t sy7636_PG_int(int irq, void *dev_id)
+{
+       SY7636_data *ptSY7636_data = (SY7636_data *)dev_id;
+       int iPG_gpio;
+
+       iPG_gpio = gpio_get_value(GPIO_SY7636_PWRGOOD);
+
+       DBG_MSG("%s(%d):PG=%d\n",__FUNCTION__,__LINE__,iPG_gpio);
+
+       queue_work(ptSY7636_data->PG_workqueue,&ptSY7636_data->PG_work);
+}
+static void sy7636_PG_func(struct work_struct *work)
+{
+       int iPG_gpio;
+       unsigned short wFaultPG;
+
+       SY7636_data *ptSY7636_data = container_of(work,SY7636_data,PG_work);
+
+       iPG_gpio = gpio_get_value(GPIO_SY7636_PWRGOOD);
+
+       wFaultPG = SY7636_REG_READ_EX(FAULTS,0);
+
+       DBG_MSG("%s(%d):PG=%d,FaultPG Reg=0x%x\n",__FUNCTION__,__LINE__,iPG_gpio,wFaultPG);
+		
+       
+       if(0==iPG_gpio && SY7636_REG_FLD_GET(OPM,RAILS_ON)) {
+               ERR_MSG("%s(%d) : Voltage drop !\n",__FUNCTION__,__LINE__);
+               if(gpfnVDropCB) {
+                       gpfnVDropCB(0);
+               }
+       }
+}
+#endif //] SY7636_ENABLE_PG_INT
 
 
 static int _sy7636_gpio_init(void)
@@ -509,7 +552,12 @@ static int _sy7636_gpio_init(void)
 	gpio_request(GPIO_SY7636_PWRGOOD, "SY7636_PWRGOOD");
 	gpio_direction_input(GPIO_SY7636_PWRGOOD);
 #endif //] USE_EPD_PWRSTAT
-
+#ifdef SY7636_ENABLE_PG_INT//[
+       gptSY7636_data->PG_workqueue=create_singlethread_workqueue("SY7636_PWRGOOD");
+       INIT_WORK(&gptSY7636_data->PG_work, sy7636_PG_func);
+       gptSY7636_data->iPG_IRQ = gpio_to_irq(GPIO_SY7636_PWRGOOD);
+#endif //]SY7636_ENABLE_PG_INT
+	
 	mxc_iomux_v3_setup_pad(GPIO_SY7636_VIN_PADCFG);
 	if(0!=gpio_request(GPIO_SY7636_VIN, "sy7636_VIN")) {
 		WARNING_MSG("%s(),request gpio sy7636_VIN fail !!\n",__FUNCTION__);
@@ -604,6 +652,7 @@ static int _sy7636_reg_init(void)
 		return -1;
 	}
 
+	SY7636_REG_FLD_SET(OPM,RAILS_ON,0);
 	SY7636_REG_WRITE(OPM);
 
 	_sy7636_reinit_vcom();
@@ -662,8 +711,8 @@ static int _sy7636_wait_power_good(int iWaitON,int iTimeout_ms)
 			if(bFaults) {
 				// fault occurs .
 				printk("SY7636 Rails ON fault (%xh)\n ",bFaults);
-				iRet = -2;
-				break;
+				//iRet = -2;
+				//break;
 			}
 			if(1==iPG) {
 				iRet = 1;
@@ -702,7 +751,7 @@ static int _sy7636_output_en(int iIsEnable)
 	int iRet = SY7636_RET_SUCCESS;
 	int iChk;
 
-	DBG_MSG("%s(%d)\n",__FUNCTION__,iIsEnable);
+	DBG_MSG("%s(%d) begin\n",__FUNCTION__,iIsEnable);
 
 	if(!gptSY7636_data) {
 		WARNING_MSG("%s(%d) : %s cannot work before init !\n",__FILE__,__LINE__,__FUNCTION__);
@@ -722,14 +771,17 @@ static int _sy7636_output_en(int iIsEnable)
 	else {
 
 		if(iIsEnable) {
-			int iRailsON_RetryCnt=3;
+			int iRailsON_RetryCnt;
+            const int iRetryMax=10;
+            unsigned char bFaults;
 
-			do {
-#ifdef SY7636_EN_OFF_WITH_RAILS //[
+			for(iRailsON_RetryCnt=0; iRailsON_RetryCnt<iRetryMax; iRailsON_RetryCnt++) 
+            {
+
 				if(EN_ON!=gpio_get_value(GPIO_SY7636_EN)) {
 					_sy7636_EN(1);
 				}
-#endif //]SY7636_EN_OFF_WITH_RAILS
+
 				SY7636_REG_FLD_SET(OPM,RAILS_ON,1);
 				if(SY7636_REG_WRITE(OPM)>=0) {
 
@@ -752,30 +804,25 @@ static int _sy7636_output_en(int iIsEnable)
 				if(1==iChk) {
 					// wait power good ok . 
 					gptSY7636_data->iIsOutputEnabled = 1;
+					break;
 				}
-				else if(iChk<0) {
+				else {
 					// wait power good times out .
-					if(--iRailsON_RetryCnt>0) {
-						WARNING_MSG("%s():wait powergood timeout !! retry %d\n",
-							__FUNCTION__,iRailsON_RetryCnt);
-						_sy7636_EN(0);
-						_sy7636_EN(1);
-						continue;
-					}
+					WARNING_MSG("%s():wait powergood timeout !! retry %d/%d\n", __FUNCTION__,iRailsON_RetryCnt,iRetryMax);
+                    _sy7636_EN(0);
 				}
 
 #else //][!USE_EPD_PWRSTAT
 				SY7636_WAIT_TICKSTAMP(gptSY7636_data->dwTickRailPowerOnEnd,"rail power on stable");
 #endif //] USE_EPD_PWRSTAT
-
-
+			}
+			if(gptSY7636_data->iIsOutputEnabled) {
 				if(1==SY7636_REG_FLD_GET(OPM,VCOM_EXT)) {
 					msleep(2);
 					gpio_direction_output(GPIO_SY7636_VCOM,VCOM_ON);
 					msleep(2);
 				}
-
-			} while (0) ;
+			}
 		}
 		else {
 
@@ -798,9 +845,20 @@ static int _sy7636_output_en(int iIsEnable)
 				_sy7636_EN(0);
 			}
 #endif //]SY7636_EN_OFF_WITH_RAILS
+
+            if(3==gptHWCFG->m_val.bUIConfig) {
+            	// MP/RD mode .
+                gptSY7636_data->dwTickEP3V3OffEnd = jiffies + 0;
+            }
+            else {
+                //gptSY7636_data->dwTickEP3V3OffEnd = jiffies + SY7636_EP3V3OFF_TICKS_MAX;
+                gptSY7636_data->dwTickEP3V3OffEnd = jiffies + msecs_to_jiffies(gptSY7636_data->iVEEStableWait_ms);
+            }
+            
 		}
 	}
-
+	
+	DBG_MSG("%s(%d) end\n",__FUNCTION__,iIsEnable);
 	return iRet ;
 }
 
@@ -834,14 +892,6 @@ static int _sy7636_vin_onoff_ex(int iIsON,int iIsRegInit)
 			gptSY7636_data->iIsPoweredON = 0;
 			gptSY7636_data->iIsVCOMNeedReInit = 1;
 			gptSY7636_data->iIsRegsNeedReInit = 1;
-			if(3==gptHWCFG->m_val.bUIConfig) {
-				// MP/RD mode .
-				gptSY7636_data->dwTickEP3V3OffEnd = jiffies + 0;
-			}
-			else {
-				//gptSY7636_data->dwTickEP3V3OffEnd = jiffies + SY7636_EP3V3OFF_TICKS_MAX;
-				gptSY7636_data->dwTickEP3V3OffEnd = jiffies + msecs_to_jiffies(gptSY7636_data->iVEEStableWait_ms);
-			}
 		}
 	}
 
@@ -883,6 +933,12 @@ static void _sy7636_pwrdwn_work_func(struct work_struct *work)
  * public functions .
  *
 ***********************************************************************/
+
+int sy7636_int_callback_setup(SY7636_INTEVT_CB fnCB)
+{
+       gpfnVDropCB = fnCB;
+       return SY7636_RET_SUCCESS;
+}
 
 int sy7636_power_onoff(int iIsPowerOn,int iIsOutputPwr)
 {
@@ -984,6 +1040,7 @@ int sy7636_suspend(void)
 	int iRet = SY7636_RET_SUCCESS;
 	//int iChk;
 
+    //printk("%s() %s enter\n",__FUNCTION__,gSleep_Mode_Suspend?"hibernation":"suspend");
 	if(!gptSY7636_data) {
 		WARNING_MSG("%s(%d) : %s cannot work before init !\n",
 				__FILE__,__LINE__,__FUNCTION__);
@@ -997,9 +1054,6 @@ int sy7636_suspend(void)
 	}
 
 	if(gSleep_Mode_Suspend) {
-		mutex_lock(&gptSY7636_data->tPwrLock);
-		_sy7636_vin_onoff(0);
-		mutex_unlock(&gptSY7636_data->tPwrLock);
 
 #if 0
 		//SY7636_WAIT_TICKSTAMP(gptSY7636_data->dwTickEP3V3OffEnd,"pwroff->EP3V3 off stable");
@@ -1016,8 +1070,12 @@ int sy7636_suspend(void)
 			#endif //] defined(GPIO_SY7636_EP_3V3_IN) && (GPIO_SY7636_EP_3V3_IN!=GPIO_SY7636_VIN)
 		}
 #endif
+		mutex_lock(&gptSY7636_data->tPwrLock);
+		_sy7636_vin_onoff(0);
+		mutex_unlock(&gptSY7636_data->tPwrLock);
 	}
 
+	//printk("%s() leave\n",__FUNCTION__);
 	return iRet;
 #else //][! SY7636_SUSPEND_ENABLED
 	printk("%s() skipped !\n",__FUNCTION__);
@@ -1049,8 +1107,6 @@ void sy7636_shutdown(void)
 	//DBG0_ENTRY_TAG();
 	_sy7636_output_en(0);
 	//DBG0_ENTRY_TAG();
-	_sy7636_vin_onoff(0);
-	//DBG0_ENTRY_TAG();
 
 #else //][!AVOID_ANIMATION_LOOP 
 
@@ -1081,6 +1137,9 @@ void sy7636_shutdown(void)
 			break;
 		}
 	}// while end .
+
+	_sy7636_vin_onoff(0);
+	//DBG0_ENTRY_TAG();
 
 #ifdef AVOID_ANIMATION_LOOP//[
 	mutex_unlock(&gptSY7636_data->tPwrLock);
@@ -1334,6 +1393,9 @@ void sy7636_release(void)
 		return ;
 	}
 
+#ifdef SY7636_ENABLE_PG_INT //[
+       free_irq(gptSY7636_data->iPG_IRQ, 0);
+#endif //] SY7636_ENABLE_PG_INT
 
 	mutex_lock(&gptSY7636_data->tPwrLock);	
 	_sy7636_vin_onoff(0);
@@ -1406,10 +1468,18 @@ int sy7636_init(int iPort)
 		gptSY7636_data->iChipPwrWaitON_ms = 10;
 		if( 1 == gptHWCFG->m_val.bDisplayResolution) {
 			// 1024x758 .
-			gptSY7636_data->iVEEStableWait_ms = 6500;
+            gptSY7636_data->iVEEStableWait_ms = 4000;
+        }
+        else if(5==gptHWCFG->m_val.bDisplayResolution) {
+            // 1448x1072 .
+            gptSY7636_data->iVEEStableWait_ms = 8000;
+        }
+        else if(8==gptHWCFG->m_val.bDisplayResolution || 3==gptHWCFG->m_val.bDisplayResolution) {
+            // 1872x1404 || 1440x1080 .
+            gptSY7636_data->iVEEStableWait_ms = 9000;
 		}
 		else {
-			gptSY7636_data->iVEEStableWait_ms = 3500;
+			gptSY7636_data->iVEEStableWait_ms = 4000;
 		}
 	}
 
@@ -1497,6 +1567,12 @@ int sy7636_init(int iPort)
 	sy7636_ONOFF(INIT_POWER_STATE);
 
 	sy7636_vcom_get(&gptSY7636_data->iCurrent_VCOM_mV);
+#ifdef SY7636_ENABLE_PG_INT //[
+       if(request_irq(gptSY7636_data->iPG_IRQ, sy7636_PG_int, IRQF_TRIGGER_FALLING, "SY7636_PG_INT", gptSY7636_data)) 
+       {
+               ERR_MSG("%s(): request PG irq failed \n",__FUNCTION__);
+       }
+#endif //] SY7636_ENABLE_PG_INT
 
 	GALLEN_DBGLOCAL_ESC();
 	return SY7636_RET_SUCCESS;

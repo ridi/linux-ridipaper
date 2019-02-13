@@ -30,5 +30,8 @@ int sy7636_vcom_get_cached(int *O_piVCOM_mV);
 
 int sy7636_ONOFF(int iIsON);
 
+typedef void *(SY7636_INTEVT_CB)(int iEVENT);
+int sy7636_int_callback_setup(SY7636_INTEVT_CB fnCB);
+
 #endif //] __LK_SY7636_H
 

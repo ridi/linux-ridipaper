@@ -110,6 +110,8 @@
 
 #include <mach/imx_rfkill.h>
 
+#define ON     1
+#define OFF    0
 
 #ifdef CONFIG_MACH_MX6SL_NTX//[
 //#define AVOID_KENREL_PANIC_WHILE_LOADING 1 //avoid kernel panic in kk4.4.2 on mx6sl
@@ -2581,6 +2583,14 @@ static struct gpio_keys_button gpio_key_L1_L2_R1_R2_FL[] = {
 //#endif //]CONFIG_ANDROID
 };
 
+static struct gpio_keys_button gpio_key_PGUP_PGDN[] = {
+       GPIO_BUTTON(GPIO_KB_COL4, KEY_F21, 1, "PAGE_UP", 1,1),                  // PAGE_L1
+       GPIO_BUTTON(GPIO_KB_COL5, KEY_F22, 1, "PAGE_DOWN", 1,1),                // PAGE_L2
+//#ifdef CONFIG_ANDROID //[
+       GPIO_BUTTON(IMX_GPIO_NR(5, 8), KEY_POWER, 1, "power", 1, 1),
+//#endif //]CONFIG_ANDROID
+};
+
 static struct gpio_keys_button gpio_key_PGUP_PGDN_TP[] = {
 	GPIO_BUTTON(GPIO_KB_COL1, KEY_F1, 1, "TP_ON", 1,1),				// TP_ON
 	GPIO_BUTTON(GPIO_KB_COL4, KEY_F21, 1, "PAGE_UP", 1,1),			// PAGE_L1
@@ -3128,6 +3138,114 @@ int get_wifi_power_status(void)
 	return (gi_wifi_power_status&1)?1:0;
 }
 
+int set_wifi_3v3(int on)
+{
+    int status = -EINVAL;
+	
+	printk("%s(%d).\n",__FUNCTION__,on);
+		
+    if (72==gptHWCFG->m_val.bPCB || 74==gptHWCFG->m_val.bPCB || 82==gptHWCFG->m_val.bPCB || 83==gptHWCFG->m_val.bPCB)       
+    // M31Q0x/E60K0x/M35QMx/E60QTx .
+    	status=gpio_direction_output(gMX6SL_WIFI_3V3, on);
+    else
+        status=gpio_direction_output(gMX6SL_WIFI_3V3,!(on));
+       
+    return status;
+}
+
+int set_wifi_pins(int wifion)
+{
+    int status = -EINVAL;
+
+	printk("%s(%d).\n",__FUNCTION__,wifion);
+
+       if(wifion){ // set pin function to SDIO
+               if(31==gptHWCFG->m_val.bPCB||32==gptHWCFG->m_val.bPCB || NTXHWCFG_TST_FLAG(gptHWCFG->m_val.bPCB_Flags2,1)) {
+                       // E60Q0X/E60Q1X/WiFi@SD2
+                       gpio_free (MX6SL_SD2_CLK );
+                       gpio_free (MX6SL_SD2_CMD );
+                       gpio_free (MX6SL_SD2_DAT0);
+                       gpio_free (MX6SL_SD2_DAT1);
+                       gpio_free (MX6SL_SD2_DAT2);
+                       gpio_free (MX6SL_SD2_DAT3);
+                       status=mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd2_wifi_pads, ARRAY_SIZE(mx6sl_ntx_sd2_wifi_pads));
+               }
+               else {
+                       gpio_free (MX6SL_SD3_CLK );
+                       gpio_free (MX6SL_SD3_CMD );
+                       gpio_free (MX6SL_SD3_DAT0);
+                       gpio_free (MX6SL_SD3_DAT1);
+                       gpio_free (MX6SL_SD3_DAT2);
+                       gpio_free (MX6SL_SD3_DAT3);
+                       status=mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd3_wifi_pads, ARRAY_SIZE(mx6sl_ntx_sd3_wifi_pads));                  
+               }
+       } else { // set pin function to GPIO
+
+               if(31==gptHWCFG->m_val.bPCB||32==gptHWCFG->m_val.bPCB || NTXHWCFG_TST_FLAG(gptHWCFG->m_val.bPCB_Flags2,1)) {
+                       // E60Q0X/E60Q1X/WiFi@SD2
+                       status=mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd2_gpio_pads, ARRAY_SIZE(mx6sl_ntx_sd2_gpio_pads));
+                       gpio_request (MX6SL_SD2_CLK     , "MX6SL_SD2_CLK" );
+                       gpio_request (MX6SL_SD2_CMD     , "MX6SL_SD2_CMD" );
+                       gpio_request (MX6SL_SD2_DAT0, "MX6SL_SD2_DAT0");
+                       gpio_request (MX6SL_SD2_DAT1, "MX6SL_SD2_DAT1");
+                       gpio_request (MX6SL_SD2_DAT2, "MX6SL_SD2_DAT2");
+                       gpio_request (MX6SL_SD2_DAT3, "MX6SL_SD2_DAT3");
+                       status=gpio_direction_input (MX6SL_SD2_CLK );
+                       status=gpio_direction_input (MX6SL_SD2_CMD );
+                       status=gpio_direction_input (MX6SL_SD2_DAT0);
+                       status=gpio_direction_input (MX6SL_SD2_DAT1);
+                       status=gpio_direction_input (MX6SL_SD2_DAT2);
+                       status=gpio_direction_input (MX6SL_SD2_DAT3);
+               }
+               else {
+                       status=mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd3_gpio_pads, ARRAY_SIZE(mx6sl_ntx_sd3_gpio_pads));
+                       gpio_request (MX6SL_SD3_CLK     , "MX6SL_SD3_CLK" );
+                       gpio_request (MX6SL_SD3_CMD     , "MX6SL_SD3_CMD" );
+                       gpio_request (MX6SL_SD3_DAT0, "MX6SL_SD3_DAT0");
+                       gpio_request (MX6SL_SD3_DAT1, "MX6SL_SD3_DAT1");
+                       gpio_request (MX6SL_SD3_DAT2, "MX6SL_SD3_DAT2");
+                       gpio_request (MX6SL_SD3_DAT3, "MX6SL_SD3_DAT3");
+                       status=gpio_direction_output (MX6SL_SD3_CLK , 0);
+                       status=gpio_direction_output (MX6SL_SD3_CMD , 0);
+                       status=gpio_direction_output (MX6SL_SD3_DAT0, 0);
+                       status=gpio_direction_output (MX6SL_SD3_DAT1, 0);
+                       status=gpio_direction_output (MX6SL_SD3_DAT2, 0);
+                       status=gpio_direction_output (MX6SL_SD3_DAT3, 0);
+               }
+       }
+       return status;
+}
+
+int set_bt_pins(int bton)
+{
+    int status = -EINVAL;
+	printk("%s(%d).\n",__FUNCTION__,bton);
+       if(bton) {
+               status=mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_uart2_pads, ARRAY_SIZE(mx6sl_ntx_uart2_pads));
+               status=gpio_direction_output (gMX6SL_BT_DIS, 1);
+       } else {
+               status=mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_uart2_gpio_pads, ARRAY_SIZE(mx6sl_ntx_uart2_gpio_pads));
+               status=gpio_direction_output (gMX6SL_BT_DIS, 0);
+       }
+       return status;
+}
+
+void wifi_sd_detect(unsigned long delay, unsigned int ms) {
+#ifndef AVOID_KENREL_PANIC_WHILE_LOADING//[
+       if (g_cd_irq) {
+               struct sdhci_host *host;
+
+               host = (struct sdhci_host *) g_wifi_sd_host;
+               mmc_detect_change(host->mmc, msecs_to_jiffies(delay));
+               msleep(ms);
+       }
+       else {
+               printk ("[%s-%d] not registered.\n",__func__,__LINE__);
+       }
+#endif //]AVOID_KENREL_PANIC_WHILE_LOADING
+}
+
+/*
 int _wifi_power_ctrl (int isWifiEnable)
 {
 	printk ("[%s-%d]\n",__func__,__LINE__);
@@ -3142,12 +3260,8 @@ int _wifi_power_ctrl (int isWifiEnable)
 		if(gMX6SL_WIFI_RST!=(unsigned int)(-1)) {
 			gpio_direction_output (gMX6SL_WIFI_RST, 0);
 		}
-		if (72==gptHWCFG->m_val.bPCB || 74==gptHWCFG->m_val.bPCB || 82==gptHWCFG->m_val.bPCB || 83==gptHWCFG->m_val.bPCB)	
-			// M31Q0x/E60K0x/M35QMx/E60QTx .
-			gpio_direction_output (gMX6SL_WIFI_3V3, 0);	// turn off Wifi_3V3_on
-		else
-			gpio_direction_input (gMX6SL_WIFI_3V3);	// turn off Wifi_3V3_on
 
+		set_wifi_3v3(OFF);
 		msleep(10);
 #ifdef _WIFI_ALWAYS_ON_
 		disable_irq_wake(gpio_to_irq(gMX6SL_WIFI_INT));
@@ -3161,34 +3275,12 @@ int _wifi_power_ctrl (int isWifiEnable)
 			mutex_unlock(&ntx_wifi_power_mutex);
 			return iOldStatus;
 		}
-
-		// sdio port process ...
-		if(31==gptHWCFG->m_val.bPCB||32==gptHWCFG->m_val.bPCB) {
-			// E60Q0X/E60Q1X
-			gpio_free (MX6SL_SD2_CLK );
-			gpio_free (MX6SL_SD2_CMD );
-			gpio_free (MX6SL_SD2_DAT0);
-			gpio_free (MX6SL_SD2_DAT1);
-			gpio_free (MX6SL_SD2_DAT2);
-			gpio_free (MX6SL_SD2_DAT3);
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd2_wifi_pads, ARRAY_SIZE(mx6sl_ntx_sd2_wifi_pads));
-		}
-		else {
-			gpio_free (MX6SL_SD3_CLK );
-			gpio_free (MX6SL_SD3_CMD );
-			gpio_free (MX6SL_SD3_DAT0);
-			gpio_free (MX6SL_SD3_DAT1);
-			gpio_free (MX6SL_SD3_DAT2);
-			gpio_free (MX6SL_SD3_DAT3);
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd3_wifi_pads, ARRAY_SIZE(mx6sl_ntx_sd3_wifi_pads));			
-		}
+		
+		set_wifi_pins(ON);
 		gpio_direction_output (gMX6SL_WIFI_RST, 0);	// turn on wifi_RST
 		msleep(10);
 		
-        if (74 ==gptHWCFG->m_val.bPCB) {
-            gpio_direction_output (gMX6SL_WIFI_3V3, 1);	// turn on Wifi_3V3_on
-        }else
-            gpio_direction_output (gMX6SL_WIFI_3V3, 0);	// turn on Wifi_3V3_on
+		set_wifi_3v3(ON);		
 		//schedule_timeout(HZ/50);
 		msleep(20);
 
@@ -3228,220 +3320,84 @@ int _wifi_power_ctrl (int isWifiEnable)
 #endif //]AVOID_KENREL_PANIC_WHILE_LOADING
 
 	if((isWifiEnable&1)==0){ // switch PIN function to GPIO
-		// sdio port disable ...
-		if(31==gptHWCFG->m_val.bPCB||32==gptHWCFG->m_val.bPCB) {
-			// E60Q0X/E60Q1X.
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd2_gpio_pads, ARRAY_SIZE(mx6sl_ntx_sd2_gpio_pads));
-			gpio_request (MX6SL_SD2_CLK	, "MX6SL_SD2_CLK" );
-			gpio_request (MX6SL_SD2_CMD	, "MX6SL_SD2_CMD" );
-			gpio_request (MX6SL_SD2_DAT0, "MX6SL_SD2_DAT0");
-			gpio_request (MX6SL_SD2_DAT1, "MX6SL_SD2_DAT1");
-			gpio_request (MX6SL_SD2_DAT2, "MX6SL_SD2_DAT2");
-			gpio_request (MX6SL_SD2_DAT3, "MX6SL_SD2_DAT3");
-			gpio_direction_input (MX6SL_SD2_CLK );
-			gpio_direction_input (MX6SL_SD2_CMD );
-			gpio_direction_input (MX6SL_SD2_DAT0);
-			gpio_direction_input (MX6SL_SD2_DAT1);
-			gpio_direction_input (MX6SL_SD2_DAT2);
-			gpio_direction_input (MX6SL_SD2_DAT3);
-		}
-		else {
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd3_gpio_pads, ARRAY_SIZE(mx6sl_ntx_sd3_gpio_pads));
-			gpio_request (MX6SL_SD3_CLK	, "MX6SL_SD3_CLK" );
-			gpio_request (MX6SL_SD3_CMD	, "MX6SL_SD3_CMD" );
-			gpio_request (MX6SL_SD3_DAT0, "MX6SL_SD3_DAT0");
-			gpio_request (MX6SL_SD3_DAT1, "MX6SL_SD3_DAT1");
-			gpio_request (MX6SL_SD3_DAT2, "MX6SL_SD3_DAT2");
-			gpio_request (MX6SL_SD3_DAT3, "MX6SL_SD3_DAT3");
-			gpio_direction_output (MX6SL_SD3_CLK , 0);
-			gpio_direction_output (MX6SL_SD3_CMD , 0);
-			gpio_direction_output (MX6SL_SD3_DAT0, 0);
-			gpio_direction_output (MX6SL_SD3_DAT1, 0);
-			gpio_direction_output (MX6SL_SD3_DAT2, 0);
-			gpio_direction_output (MX6SL_SD3_DAT3, 0);
-		}
+		set_wifi_pins(OFF);
 	}
 	printk("%s() end.\n",__FUNCTION__);
 	mutex_unlock(&ntx_wifi_power_mutex);
 	return iOldStatus;
 }
+*/
 
-int _combo_wifi_power_ctrl (int isWifiEnable)
+int wifi_card_enable(void)
 {
-	printk ("[%s-%d]\n",__func__,__LINE__);
-	int iHWID;
-	int iOldStatus;
-
-	iOldStatus = gi_wifi_power_status;
-	printk("Wifi / BT power control %d\n", isWifiEnable);
-	if (isWifiEnable & 3) {
-		if (72 ==gptHWCFG->m_val.bPCB || 82==gptHWCFG->m_val.bPCB)	// M31Q0x/M35QEx
-			gpio_direction_output (gMX6SL_WIFI_3V3, 1);	// turn off Wifi_3V3_on
-		else
-			gpio_direction_output (gMX6SL_WIFI_3V3, 0);	// turn on Wifi_3V3_on
-	} else {
-		if (72 ==gptHWCFG->m_val.bPCB || 82==gptHWCFG->m_val.bPCB)	// M31Q0x/M35QEx
-			gpio_direction_output (gMX6SL_WIFI_3V3, 0);	// turn off Wifi_3V3_on
-		else
-			gpio_direction_input (gMX6SL_WIFI_3V3);	// turn off Wifi_3V3_on
-	}
-
-	if (2 & isWifiEnable) {
-		if (11 == gptHWCFG->m_val.bWifi || 12 == gptHWCFG->m_val.bWifi || 14 == gptHWCFG->m_val.bWifi) {
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_uart2_pads, ARRAY_SIZE(mx6sl_ntx_uart2_pads));
-			gpio_direction_output (gMX6SL_BT_DIS, 1);
-		}
-		gi_wifi_power_status |= 2;
-	}
-	else {
-		if (11 == gptHWCFG->m_val.bWifi || 12 == gptHWCFG->m_val.bWifi || 14 == gptHWCFG->m_val.bWifi) {
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_uart2_gpio_pads, ARRAY_SIZE(mx6sl_ntx_uart2_gpio_pads));
-			gpio_direction_output (gMX6SL_BT_DIS, 0);
-		}
-		gi_wifi_power_status &= ~2;
-	}
-
-	if ((isWifiEnable&1) == (iOldStatus&1)) {
-			printk ("Wifi already %s.\n",(isWifiEnable&1)?"on":"off");
-			return iOldStatus;
-	}
-	if((isWifiEnable&1) == 0) {
+	printk("%s().\n",__FUNCTION__);
+	if(gMX6SL_WIFI_RST!=(unsigned int)(-1)) {
 		gpio_direction_output (gMX6SL_WIFI_RST, 0);
-		if (11 == gptHWCFG->m_val.bWifi || 12 == gptHWCFG->m_val.bWifi || 14 == gptHWCFG->m_val.bWifi)
-			gpio_direction_input (gMX6SL_WIFI_DIS);
-
-#ifdef _WIFI_ALWAYS_ON_
-		disable_irq_wake(gpio_to_irq(gMX6SL_WIFI_INT));
-#endif
-#ifdef _BT_ALWAYS_ON_
-		disable_irq_wake(gpio_to_irq(gMX6SL_BT_INT));
-#endif
-		gi_wifi_power_status &= ~1;
 	}
-	else {
-		// sdio port process ...
-		if(31==gptHWCFG->m_val.bPCB||32==gptHWCFG->m_val.bPCB || NTXHWCFG_TST_FLAG(gptHWCFG->m_val.bPCB_Flags2,1)) {
-			// E60Q0X/E60Q1X/WiFi@SD2
-			gpio_free (MX6SL_SD2_CLK );
-			gpio_free (MX6SL_SD2_CMD );
-			gpio_free (MX6SL_SD2_DAT0);
-			gpio_free (MX6SL_SD2_DAT1);
-			gpio_free (MX6SL_SD2_DAT2);
-			gpio_free (MX6SL_SD2_DAT3);
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd2_wifi_pads, ARRAY_SIZE(mx6sl_ntx_sd2_wifi_pads));
-		}
-		else {
-			gpio_free (MX6SL_SD3_CLK );
-			gpio_free (MX6SL_SD3_CMD );
-			gpio_free (MX6SL_SD3_DAT0);
-			gpio_free (MX6SL_SD3_DAT1);
-			gpio_free (MX6SL_SD3_DAT2);
-			gpio_free (MX6SL_SD3_DAT3);
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd3_wifi_pads, ARRAY_SIZE(mx6sl_ntx_sd3_wifi_pads));			
-		}
-		//msleep(10);
+	
+	set_wifi_3v3(ON);
+	msleep(100);
+	if(gMX6SL_WIFI_RST!=(unsigned int)(-1)) {
+		gpio_direction_output (gMX6SL_WIFI_RST, 1);
+	}
+	
+	wifi_sd_detect(500,600);	
+}
+
+int wifi_card_disable(void)
+{
+	printk("%s().\n",__FUNCTION__);
+    if(gMX6SL_WIFI_RST!=(unsigned int)(-1)) {
+    	gpio_direction_output (gMX6SL_WIFI_RST, 0);
+	}
+	
+	set_wifi_3v3(OFF);
+	wifi_sd_detect(100,200);
+}
+
+
+
+int ntx_wifi_power_ctrl (int isWifiEnable)
+{
+	printk("wifi_power_status=%d\n",gi_wifi_power_status);
+	printk("%s(%d).\n",__FUNCTION__,isWifiEnable);
+	
+	mutex_lock(&ntx_wifi_power_mutex);
+    if(isWifiEnable){  // TURN ON WIFI
+		if(gi_wifi_power_status==0){
+        	wifi_card_enable();
+        }
+        set_wifi_pins(ON);
+
 		if (11==gptHWCFG->m_val.bWifi || 12==gptHWCFG->m_val.bWifi || 14==gptHWCFG->m_val.bWifi) {
-            printk("set uart2 pins as uart function\n");
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_uart2_pads, ARRAY_SIZE(mx6sl_ntx_uart2_pads));
-			gpio_direction_output (gMX6SL_BT_DIS, 1);
 			gpio_direction_output (gMX6SL_WIFI_DIS, 1);
 		}
-
-		if (72==gptHWCFG->m_val.bPCB || 74==gptHWCFG->m_val.bPCB || 82==gptHWCFG->m_val.bPCB || 83==gptHWCFG->m_val.bPCB)	
-			// M31Q0x|E60K0x|M35QMx|E60QTx
-			gpio_direction_output (gMX6SL_WIFI_3V3, 1);	// turn off Wifi_3V3_on
-		else
-			gpio_direction_output (gMX6SL_WIFI_3V3, 0);	// turn on Wifi_3V3_on
-
-		//schedule_timeout(HZ/50);
-		msleep(20);
-
-//		gpio_direction_input (gMX6SL_WIFI_INT);
-		msleep(10);
-		if(gMX6SL_WIFI_RST!=(unsigned int)(-1)) {
-			gpio_direction_output (gMX6SL_WIFI_RST, 1);	// turn on wifi_RST
-		}
-		//schedule_timeout(HZ/10);
-		msleep(100);
 #ifdef _WIFI_ALWAYS_ON_
 		enable_irq_wake(gpio_to_irq(gMX6SL_WIFI_INT));
 #endif
-#ifdef _BT_ALWAYS_ON_
-		enable_irq_wake(gpio_to_irq(gMX6SL_BT_INT));
+        gi_wifi_power_status |= 1;
+    } else {   // TURN OFF WIFI
+		if((gi_wifi_power_status&2)==0) {
+            if (11 == gptHWCFG->m_val.bWifi || 12 == gptHWCFG->m_val.bWifi || 14 == gptHWCFG->m_val.bWifi) {
+                gpio_direction_output (gMX6SL_WIFI_DIS, 0);
+            }
+#ifdef _WIFI_ALWAYS_ON_
+        	disable_irq_wake(gpio_to_irq(gMX6SL_WIFI_INT));
 #endif
-		gi_wifi_power_status |= 1;
-	}
-
-#ifndef AVOID_KENREL_PANIC_WHILE_LOADING//[
-	if (g_cd_irq) {
-		struct sdhci_host *host;
-
-		host = (struct sdhci_host *) g_wifi_sd_host;
-		//g_cd_irq (0, g_wifi_sd_host);
-		//schedule_timeout (100);
-		//msleep(1000);
-			if (isWifiEnable == 0) {
-				mmc_detect_change(host->mmc, msecs_to_jiffies(100));
-				msleep(200);
-			}
-			else {
-				mmc_detect_change(host->mmc, msecs_to_jiffies(500));
-				msleep(600);
-			}
-		}
-	else {
-		printk ("[%s-%d] not registered.\n",__func__,__LINE__);
-	}
-#endif //]AVOID_KENREL_PANIC_WHILE_LOADING
-
-	if((isWifiEnable&1)==0){ // switch PIN function to GPIO
-		// sdio port disable ...
-		if(31==gptHWCFG->m_val.bPCB||32==gptHWCFG->m_val.bPCB || NTXHWCFG_TST_FLAG(gptHWCFG->m_val.bPCB_Flags2,1)) {
-			// E60Q0X/E60Q1X/WiFi@SD2
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd2_gpio_pads, ARRAY_SIZE(mx6sl_ntx_sd2_gpio_pads));
-			gpio_request (MX6SL_SD2_CLK	, "MX6SL_SD2_CLK" );
-			gpio_request (MX6SL_SD2_CMD	, "MX6SL_SD2_CMD" );
-			gpio_request (MX6SL_SD2_DAT0, "MX6SL_SD2_DAT0");
-			gpio_request (MX6SL_SD2_DAT1, "MX6SL_SD2_DAT1");
-			gpio_request (MX6SL_SD2_DAT2, "MX6SL_SD2_DAT2");
-			gpio_request (MX6SL_SD2_DAT3, "MX6SL_SD2_DAT3");
-			gpio_direction_input (MX6SL_SD2_CLK );
-			gpio_direction_input (MX6SL_SD2_CMD );
-			gpio_direction_input (MX6SL_SD2_DAT0);
-			gpio_direction_input (MX6SL_SD2_DAT1);
-			gpio_direction_input (MX6SL_SD2_DAT2);
-			gpio_direction_input (MX6SL_SD2_DAT3);
-		}
-		else {
-			mxc_iomux_v3_setup_multiple_pads(mx6sl_ntx_sd3_gpio_pads, ARRAY_SIZE(mx6sl_ntx_sd3_gpio_pads));
-			gpio_request (MX6SL_SD3_CLK	, "MX6SL_SD3_CLK" );
-			gpio_request (MX6SL_SD3_CMD	, "MX6SL_SD3_CMD" );
-			gpio_request (MX6SL_SD3_DAT0, "MX6SL_SD3_DAT0");
-			gpio_request (MX6SL_SD3_DAT1, "MX6SL_SD3_DAT1");
-			gpio_request (MX6SL_SD3_DAT2, "MX6SL_SD3_DAT2");
-			gpio_request (MX6SL_SD3_DAT3, "MX6SL_SD3_DAT3");
-			gpio_direction_output (MX6SL_SD3_CLK , 0);
-			gpio_direction_output (MX6SL_SD3_CMD , 0);
-			gpio_direction_output (MX6SL_SD3_DAT0, 0);
-			gpio_direction_output (MX6SL_SD3_DAT1, 0);
-			gpio_direction_output (MX6SL_SD3_DAT2, 0);
-			gpio_direction_output (MX6SL_SD3_DAT3, 0);
+            set_wifi_pins(OFF);
+            gi_wifi_power_status &= ~1;
+        	wifi_card_disable();
+		} else {
+             /*if BT is still on, cannot turn off wifi on combo card*/
+             gi_wifi_power_status &= ~1;
 		}
 	}
-	printk("%s() end.\n",__FUNCTION__);
-	return iOldStatus;
-}
-
-void ntx_bt_power_ctrl(int iIsBTEnable)
-{
-	mutex_lock(&ntx_wifi_power_mutex);
-	if (iIsBTEnable)
-		_ntx_wifi_power_ctrl(gi_wifi_power_status | 2);
-	else
-		_ntx_wifi_power_ctrl(gi_wifi_power_status & ~2);
 	mutex_unlock(&ntx_wifi_power_mutex);
 }
 
+EXPORT_SYMBOL(ntx_wifi_power_ctrl);
+
+/*
 void ntx_wifi_power_ctrl(int iIsWifiEnable)
 {
 
@@ -3458,7 +3414,43 @@ void ntx_wifi_power_ctrl(int iIsWifiEnable)
 }
 
 EXPORT_SYMBOL(ntx_wifi_power_ctrl);
+*/
 
+int ntx_bt_power_ctrl (int isBtEnable)
+{
+	printk("%s(%d).\n",__FUNCTION__,isBtEnable);
+    
+	if(isBtEnable) {  //TURN ON BT
+		if(gi_wifi_power_status==0){
+        	/* for combo wifi/bt cards, bt don't work standalone*/
+			//wifi_card_enable();
+            ntx_wifi_power_ctrl(ON);
+    	}
+		mutex_lock(&ntx_wifi_power_mutex);
+		
+		set_bt_pins(ON);        
+		gpio_direction_output (gMX6SL_BT_DIS, 1);
+#ifdef _BT_ALWAYS_ON_
+       	enable_irq_wake(gpio_to_irq(gMX6SL_BT_INT));
+#endif
+       	gi_wifi_power_status |= 2;
+		mutex_unlock(&ntx_wifi_power_mutex);
+	} else {   //TURN OFF BT
+        mutex_lock(&ntx_wifi_power_mutex);
+		gpio_direction_output (gMX6SL_BT_DIS, 0);
+#ifdef _BT_ALWAYS_ON_
+        disable_irq_wake(gpio_to_irq(gMX6SL_BT_INT));
+#endif
+        set_bt_pins(OFF);
+
+        gi_wifi_power_status &= ~2;
+        mutex_unlock(&ntx_wifi_power_mutex);
+        if(gi_wifi_power_status==0){
+        	/* for combo wifi/bt cards, bt don't work standalone*/
+            ntx_wifi_power_ctrl(OFF);
+        }
+	}
+}
 
 int ntx_get_wifi_irq_gpio(void)
 {
@@ -4368,20 +4360,26 @@ static void ntx_gpio_init(void)
         }
         gpio_request (gMX6SL_BT_DIS, "BT_DIS");
         gpio_request (gMX6SL_WIFI_DIS, "WIFI_DIS");
-    }
-
-	if (11==gptHWCFG->m_val.bWifi || 12==gptHWCFG->m_val.bWifi || 14==gptHWCFG->m_val.bWifi) {
-		_ntx_wifi_power_ctrl = _combo_wifi_power_ctrl;
-	} else {
-		_ntx_wifi_power_ctrl = _wifi_power_ctrl;
 	}
 	ntx_wifi_power_ctrl (0);
 
 	//Front Light
 	gpio_request (MX6SL_FL_EN, "MX6SL_FL_EN");
-	gpio_direction_input (MX6SL_FL_EN);
+    if(8==gptHWCFG->m_val.bFL_PWM) {        
+    	// TLC5947
+        gpio_request (MX6SL_FL_PWR_ON, "MX6SL_FL_PWR_ON");
+        gpio_direction_output (MX6SL_FL_EN,1);
+        gpio_direction_output (MX6SL_FL_PWR_ON,0);
+    }
+    else{
+        gpio_direction_input (MX6SL_FL_EN);
+        // If use TLC5947 , can't set  MX6SL_PAD_KEY_ROW2__KPP_ROW_2 , otherwise FL will flash
+        mxc_iomux_v3_setup_pad(MX6SL_PAD_KEY_ROW2__KPP_ROW_2);  //KEY_ROW2
+    }
+	
 	gpio_request (MX6SL_FL_R_EN, "MX6SL_FL_R_EN");
 	gpio_direction_input (MX6SL_FL_R_EN);
+
 	if(4==gptHWCFG->m_val.bFL_PWM||5==gptHWCFG->m_val.bFL_PWM) 
 	{
 		// FL PWM source is MSP430+LM3630 .
@@ -4510,7 +4508,7 @@ static void __init mx6_ntx_init(void)
 				// C touch @ I2C2
 				i2c_register_board_info(1,&i2c_cyttsp_binfo,1);
             }
-			else if(60 == gptHWCFG->m_val.bPCB) {// E60QM2 , SLL's PCB + SL's CPU
+			else if(60 == gptHWCFG->m_val.bPCB || 75 == gptHWCFG->m_val.bPCB) {// E60QM2 , SLL's PCB + SL's CPU , E80K02-MX6SL
 				if(NTXHWCFG_TST_FLAG(gptHWCFG->m_val.bPCB_Flags2,0)) // emmc @ SD1 (gpio was different)
 				{
 					_cyttsp5_core_platform_data.irq_gpio = CYTTSP5_I2C_IRQ_GPIO_EX ;
@@ -4518,6 +4516,9 @@ static void __init mx6_ntx_init(void)
 					i2c_cyttsp_binfo.platform_data=&_cyttsp5_platform_data;
 					i2c_cyttsp_binfo.irq = CYTTSP5_I2C_IRQ_GPIO_EX;
 				}
+				if(75 == gptHWCFG->m_val.bPCB) // E80K02 
+                	_cyttsp5_mt_platform_data.flags = CY_MT_FLAG_INV_Y ;
+
 				// C touch @ I2C2
 				i2c_register_board_info(1,&i2c_cyttsp_binfo,1);
 			}
@@ -4762,8 +4763,22 @@ static void __init mx6_ntx_init(void)
 		if(83==gptHWCFG->m_val.bPCB){ //E60QT4
 			kx122_info.gpio_int1 = GPIO_KB_ROW4;
 		}
-		// G sensor @ I2C2
-		i2c_register_board_info(1,&i2c_kx122_binfo,1);
+		else if(75==gptHWCFG->m_val.bPCB) //E80K02
+        {
+            //kx122_info.gpio_int1 = GPIO_KB_ROW1;
+			kx122_info.gpio_int1 = GPIO_KB_ROW0;
+        }
+
+        if(75==gptHWCFG->m_val.bPCB){ //E80K02
+            // G sensor @ I2C1
+            //i2c_register_board_info(1,&i2c_kx122_binfo,0);
+			i2c_register_board_info(0,&i2c_kx122_binfo,1);
+        }
+        else{ //E60QT4,E60QU4
+             // G sensor @ I2C2
+             i2c_register_board_info(1,&i2c_kx122_binfo,1);
+        }
+
 	}
 
 	// 2nd RSensor ...
@@ -5149,6 +5164,10 @@ static void __init mx6_ntx_init(void)
 					ntx_gpio_key_data.buttons = gpio_key_L1_L2_R1_R2_FL;
 					ntx_gpio_key_data.nbuttons = ARRAY_SIZE(gpio_key_L1_L2_R1_R2_FL);
 					break;
+                case 26:// PGUP+PGDN
+                    ntx_gpio_key_data.buttons = gpio_key_PGUP_PGDN;
+                    ntx_gpio_key_data.nbuttons = ARRAY_SIZE(gpio_key_PGUP_PGDN);
+                    break;                                  
 				case 27: // PGUP+PGDN+TP
 					ntx_gpio_key_data.buttons = gpio_key_PGUP_PGDN_TP;
 					ntx_gpio_key_data.nbuttons = ARRAY_SIZE(gpio_key_PGUP_PGDN_TP);	

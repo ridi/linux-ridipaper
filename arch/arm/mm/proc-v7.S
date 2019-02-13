@@ -99,20 +99,13 @@ ENDPROC(cpu_v7_dcache_clean_area)
  *	It is assumed that:
  *	- we are not using split page tables
  */
-ENTRY(cpu_v7_btbinv_switch_mm)
 ENTRY(cpu_v7_switch_mm)
 #ifdef CONFIG_MMU
 	mov	r2, #0
-	mcr	p15, 0, r2, c7, c5, 6		@ flush BTAC/BTB
-#endif
-#ifdef CONFIG_MMU
-	mov	r2, #0
+	mcr p15, 0, r2, c7, c5, 6       @ flush BTAC/BTB
 	ldr	r1, [r1, #MM_CONTEXT_ID]	@ get mm->context.id
 	ALT_SMP(orr	r0, r0, #TTB_FLAGS_SMP)
 	ALT_UP(orr	r0, r0, #TTB_FLAGS_UP)
-#ifdef CONFIG_ARM_ERRATA_430973
-	mcr	p15, 0, r2, c7, c5, 6		@ flush BTAC/BTB
-#endif
 #ifdef CONFIG_ARM_ERRATA_754322
 	dsb
 #endif
@@ -128,7 +121,6 @@ ENTRY(cpu_v7_switch_mm)
 #endif
 	mov	pc, lr
 ENDPROC(cpu_v7_switch_mm)
-ENDPROC(cpu_v7_btbinv_switch_mm)
 
 /*
  *	cpu_v7_set_pte_ext(ptep, pte)
@@ -267,34 +259,6 @@ cpu_resume_l1_flags:
 #define cpu_v7_do_suspend	0
 #define cpu_v7_do_resume	0
 #endif
-
-/*
- * Cortex-A9 processor functions
- */
-.globl	cpu_ca9mp_suspend_size
-.equ	cpu_ca9mp_suspend_size, cpu_v7_suspend_size + 4 * 2
-#ifdef CONFIG_PM_SLEEP
-ENTRY(cpu_ca9mp_do_suspend)
-	stmfd	sp!, {r4 - r5}
-	mrc	p15, 0, r4, c15, c0, 1		@ Diagnostic register
-	mrc	p15, 0, r5, c15, c0, 0		@ Power register
-	stmia	r0!, {r4 - r5}
-	ldmfd	sp!, {r4 - r5}
-	b	cpu_v7_do_suspend
-ENDPROC(cpu_ca9mp_do_suspend)
-
-ENTRY(cpu_ca9mp_do_resume)
-	ldmia	r0!, {r4 - r5}
-	mrc	p15, 0, r10, c15, c0, 1		@ Read Diagnostic register
-	teq	r4, r10				@ Already restored?
-	mcrne	p15, 0, r4, c15, c0, 1		@ No, so restore it
-	mrc	p15, 0, r10, c15, c0, 0		@ Read Power register
-	teq	r5, r10				@ Already restored?
-	mcrne	p15, 0, r5, c15, c0, 0		@ No, so restore it
-	b	cpu_v7_do_resume
-ENDPROC(cpu_ca9mp_do_resume)
-#endif
-
 
 	__CPUINIT
 
@@ -475,39 +439,6 @@ ENTRY(v7_processor_functions)
 	.word	cpu_v7_do_suspend
 	.word	cpu_v7_do_resume
 	.size	v7_processor_functions, . - v7_processor_functions
-
-/*	define_processor_functions v7_btbinv, dabort=v7_early_abort, pabort=v7_pabort, suspend=1 */
-ENTRY(v7_btbinv_processor_functions)
-	.word	v7_early_abort
-	.word	v7_pabort
-	.word	cpu_v7_proc_init
-	.word	cpu_v7_proc_fin
-	.word	cpu_v7_reset
-	.word	cpu_v7_do_idle
-	.word	cpu_v7_dcache_clean_area
-	.word	cpu_v7_btbinv_switch_mm
-	.word	cpu_v7_set_pte_ext
-	.word	cpu_v7_suspend_size
-	.word	cpu_v7_do_suspend
-	.word	cpu_v7_do_resume
-	.size	v7_btbinv_processor_functions, . - v7_btbinv_processor_functions
-#ifndef CONFIG_ARM_LPAE
-/*	define_processor_functions ca9mp, dabort=v7_early_abort, pabort=v7_pabort, suspend=1*/
-ENTRY(ca9mp_processor_functions)
-	.word	v7_early_abort
-	.word	v7_pabort
-	.word	cpu_v7_proc_init
-	.word	cpu_v7_proc_fin
-	.word	cpu_v7_reset
-	.word	cpu_v7_do_idle
-	.word	cpu_v7_dcache_clean_area
-	.word	cpu_v7_btbinv_switch_mm
-	.word	cpu_v7_set_pte_ext
-	.word	cpu_ca9mp_suspend_size
-	.word	cpu_ca9mp_do_suspend
-	.word	cpu_ca9mp_do_resume
-	.size	ca9mp_processor_functions, . - ca9mp_processor_functions
-#endif
 
 	.section ".rodata"
 
