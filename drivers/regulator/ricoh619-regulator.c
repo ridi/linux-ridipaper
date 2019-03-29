@@ -73,6 +73,8 @@ extern volatile NTX_HWCONFIG *gptHWCFG;
 
 static unsigned int ricoh61x_suspend_status;
 
+int ricoh619_charger_detect(void);
+
 static inline struct device *to_ricoh61x_dev(struct regulator_dev *rdev)
 {
 	return rdev_get_dev(rdev)->parent->parent;
@@ -497,6 +499,11 @@ static int __devinit ricoh61x_regulator_probe(struct platform_device *pdev)
 //			printk("[%s-%d] ID=%d: eco_slp_reg=%2X, setting to 0\n", __func__, __LINE__, id, ri-> eco_slp_reg);
 			ri->eco_slp_reg=0;
 		}
+	} else if(84==gptHWCFG->m_val.bPCB && 9==gptHWCFG->m_val.bTouchCtrl) {
+		if (RICOH619_ID_LDO5 == id) {
+	// E70Q54 + ELAN , must disable eco mode or the TP_3V3 will pull low when suspend. 
+			ri->eco_slp_reg=0;
+		}
 	}
 
 	platform_set_drvdata(pdev, rdev);
@@ -531,17 +538,21 @@ static int ricoh61x_regulator_suspend(struct device *dev)
 	if (gSleep_Mode_Suspend ) {
 		temp = (regulator_slot[ri->id] & 0xF0) | 0x0E;
 		switch (ri->id) {
+		case RICOH619_ID_LDO5:	// SPD_3V3
+			if(80==gptHWCFG->m_val.bPCB && 31==gptHWCFG->m_val.bCustomer && ricoh619_charger_detect()) {
+				// do not trun off SPD_3V3 when hibernation (for E60QUX RIDI LED bebavior)
+				break;
+			}
 		case RICOH619_ID_LDO8:	// VDD_EP_1V8
 		case RICOH619_ID_DC3:	// Core2_1V3_ARM
 		case RICOH619_ID_LDO3:	// Core5_1V2
-		case RICOH619_ID_LDO5:	// SPD_3V3
 		case RICOH619_ID_LDO7:	// VDD_PWM
 			ricoh61x_write(to_ricoh61x_dev(rdev), offset, temp);
 			break;
 		case RICOH619_ID_LDO4:
 		case RICOH619_ID_LDO9:
 		case RICOH619_ID_LDO10:
-			if (50==gptHWCFG->m_val.bPCB || 47==gptHWCFG->m_val.bPCB || 54==gptHWCFG->m_val.bPCB || 58==gptHWCFG->m_val.bPCB || 61==gptHWCFG->m_val.bPCB || 68>=gptHWCFG->m_val.bPCB) {
+			if (50==gptHWCFG->m_val.bPCB || 47==gptHWCFG->m_val.bPCB || 54==gptHWCFG->m_val.bPCB || 58==gptHWCFG->m_val.bPCB || 61==gptHWCFG->m_val.bPCB || 68<=gptHWCFG->m_val.bPCB) {
 				// E60QFX/ED0Q0X/ED0Q1X/E60QJX/E60QKX/models after E60QPX
 				ricoh61x_write(to_ricoh61x_dev(rdev), offset, temp);
 			}
@@ -623,7 +634,7 @@ static int ricoh61x_regulator_resume(struct device *dev)
 		case RICOH619_ID_LDO4:
 		case RICOH619_ID_LDO9:
 		case RICOH619_ID_LDO10:
-			if (50==gptHWCFG->m_val.bPCB || 47==gptHWCFG->m_val.bPCB || 54==gptHWCFG->m_val.bPCB || 58==gptHWCFG->m_val.bPCB || 61==gptHWCFG->m_val.bPCB || 68==gptHWCFG->m_val.bPCB) {
+			if (50==gptHWCFG->m_val.bPCB || 47==gptHWCFG->m_val.bPCB || 54==gptHWCFG->m_val.bPCB || 58==gptHWCFG->m_val.bPCB || 61==gptHWCFG->m_val.bPCB || 68<=gptHWCFG->m_val.bPCB) {
 				// E60QFX/ED0Q0X/ED0Q1X/E60QJX/E60QKX/E60QPX 
 				ricoh61x_write(to_ricoh61x_dev(rdev), offset, regulator_slot[ri->id]);
 			}
