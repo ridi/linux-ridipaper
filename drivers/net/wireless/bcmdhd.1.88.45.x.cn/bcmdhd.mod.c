@@ -196,7 +196,7 @@ __attribute__((section("__versions"))) = {
 	{ 0x25048e2c, "regulator_put" },
 	{ 0x8cf51d15, "up" },
 	{ 0xd1b455a2, "genl_register_mc_group" },
-	{ 0x1f8be0e2, "ntx_wifi_power_ctrl" },
+	{ 0xbb245c3f, "ntx_wifi_power_ctrl" },
 	{ 0x45a55ec8, "__iounmap" },
 	{ 0x8893fa5d, "finish_wait" },
 	{ 0xd7912a81, "genl_register_ops" },

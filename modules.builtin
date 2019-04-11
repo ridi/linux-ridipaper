@@ -96,7 +96,6 @@ kernel/drivers/input/evdev.ko
 kernel/drivers/input/keyboard/atkbd.ko
 kernel/drivers/input/keyboard/gpio_keys.ko
 kernel/drivers/input/keyboard/imx_keypad.ko
-kernel/drivers/input/keyboard/headphone_detect_sw.ko
 kernel/drivers/input/misc/uinput.ko
 kernel/drivers/input/touchscreen/zforce_i2c.ko
 kernel/drivers/input/touchscreen/elan_touch_i2c.ko
@@ -215,16 +214,15 @@ kernel/sound/core/snd-timer.ko
 kernel/sound/core/snd-pcm.ko
 kernel/sound/core/snd-page-alloc.ko
 kernel/sound/core/snd-rawmidi.ko
+kernel/sound/drivers/snd-dummy.ko
 kernel/sound/soc/snd-soc-core.ko
 kernel/sound/soc/codecs/snd-soc-mxc-hdmi.ko
 kernel/sound/soc/codecs/snd-soc-mxc-spdif.ko
-kernel/sound/soc/codecs/snd-soc-alc5640.ko
 kernel/sound/soc/imx/snd-soc-imx.ko
 kernel/sound/soc/imx/snd-soc-imx-mx2.ko
 kernel/sound/soc/imx/snd-soc-imx-spdif-dai.ko
 kernel/sound/soc/imx/snd-soc-imx-spdif.ko
 kernel/sound/soc/imx/snd-soc-imx-hdmi.ko
-kernel/sound/soc/imx/snd-soc-imx-alc5640.ko
 kernel/sound/usb/snd-usb-audio.ko
 kernel/sound/usb/snd-usbmidi-lib.ko
 kernel/net/bluetooth/bluetooth.ko

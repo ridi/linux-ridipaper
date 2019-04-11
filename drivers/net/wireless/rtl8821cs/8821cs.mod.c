@@ -51,7 +51,7 @@ __attribute__((section("__versions"))) = {
 	{ 0x37a0cba, "kfree" },
 	{ 0xfa2a45e, "__memzero" },
 	{ 0xd84a0d24, "cfg80211_ibss_joined" },
-	{ 0x1f8be0e2, "ntx_wifi_power_ctrl" },
+	{ 0xbb245c3f, "ntx_wifi_power_ctrl" },
 	{ 0x6cd89070, "__netif_schedule" },
 	{ 0xe2d5255a, "strcmp" },
 	{ 0x1e6d26a8, "strstr" },

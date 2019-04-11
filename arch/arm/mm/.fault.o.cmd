@@ -612,8 +612,6 @@ deps_arch/arm/mm/fault.o := \
     $(wildcard include/config/cpu/tlb/v4wb.h) \
     $(wildcard include/config/cpu/tlb/v7.h) \
     $(wildcard include/config/arm/errata/720789.h) \
-  /home/ridi/p123/p123/kernel_imx/arch/arm/include/asm/cputype.h \
-    $(wildcard include/config/cpu/cp15.h) \
   arch/arm/mm/fault.h \
 
 arch/arm/mm/fault.o: $(deps_arch/arm/mm/fault.o)

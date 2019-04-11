@@ -4,6 +4,7 @@ source_drivers/input/touchscreen/kx122.o := drivers/input/touchscreen/kx122.c
 
 deps_drivers/input/touchscreen/kx122.o := \
     $(wildcard include/config/of.h) \
+    $(wildcard include/config/android.h) \
     $(wildcard include/config/soc/imx6sll.h) \
     $(wildcard include/config/pm.h) \
     $(wildcard include/config/pm/runtime.h) \

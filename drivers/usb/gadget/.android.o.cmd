@@ -638,6 +638,7 @@ deps_drivers/usb/gadget/android.o := \
   include/linux/major.h \
   drivers/usb/gadget/f_mass_storage.c \
     $(wildcard include/config/usb/android/mass/storage.h) \
+    $(wildcard include/config/usb/g/android.h) \
     $(wildcard include/config/change.h) \
   include/linux/blkdev.h \
     $(wildcard include/config/blk/cgroup.h) \

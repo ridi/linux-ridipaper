@@ -4,11 +4,11 @@ source_arch/arm/mm/proc-v7.o := arch/arm/mm/proc-v7.S
 
 deps_arch/arm/mm/proc-v7.o := \
     $(wildcard include/config/mmu.h) \
-    $(wildcard include/config/arm/errata/430973.h) \
     $(wildcard include/config/arm/errata/754322.h) \
     $(wildcard include/config/cpu/use/domains.h) \
     $(wildcard include/config/pm/sleep.h) \
     $(wildcard include/config/smp.h) \
+    $(wildcard include/config/arm/errata/430973.h) \
     $(wildcard include/config/arm/errata/458693.h) \
     $(wildcard include/config/arm/errata/460075.h) \
     $(wildcard include/config/arm/errata/742230.h) \
@@ -20,7 +20,6 @@ deps_arch/arm/mm/proc-v7.o := \
     $(wildcard include/config/arm/thumbee.h) \
     $(wildcard include/config/cpu/endian/be8.h) \
     $(wildcard include/config/swp/emulate.h) \
-    $(wildcard include/config/arm/lpae.h) \
   /home/ridi/p123/p123/kernel_imx/arch/arm/include/asm/unified.h \
     $(wildcard include/config/arm/asm/unified.h) \
     $(wildcard include/config/thumb2/kernel.h) \

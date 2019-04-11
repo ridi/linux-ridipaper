@@ -1,10 +1,8 @@
 kernel/sound/soc/snd-soc-core.ko
 kernel/sound/soc/codecs/snd-soc-mxc-hdmi.ko
 kernel/sound/soc/codecs/snd-soc-mxc-spdif.ko
-kernel/sound/soc/codecs/snd-soc-alc5640.ko
 kernel/sound/soc/imx/snd-soc-imx.ko
 kernel/sound/soc/imx/snd-soc-imx-mx2.ko
 kernel/sound/soc/imx/snd-soc-imx-spdif-dai.ko
 kernel/sound/soc/imx/snd-soc-imx-spdif.ko
 kernel/sound/soc/imx/snd-soc-imx-hdmi.ko
-kernel/sound/soc/imx/snd-soc-imx-alc5640.ko
