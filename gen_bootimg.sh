@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/sh -x
 PROJECT_PATH=$(pwd)
 PRODUCT_NAME=$(cat ${PROJECT_PATH}/.model | grep -m 1 PRODUCT_NAME | cut -d'=' -f2,2);  ## define in build_model
 KERNEL_VER=$(cat ${PROJECT_PATH}/.model | grep -m 1 KERNEL | cut -d'=' -f2,2);  ## define in .model
@@ -24,9 +24,10 @@ else
 	BASEADDRESS="0x10800000"
 fi	
 
-
+KERNEL_IMG=""${KERNEL_PATH}"/arch/arm/boot/zImage"
+#KERNEL_IMG="/media/terrylove/ssd_eink_os_2/NBKK/kernel_imx/arch/arm/boot/zImage"
 if [ -f "${OUT_PATH}"/ramdisk.img ] ; then
 	#"${KERNEL_PATH}"/mkbootimg --kernel "${KERNEL_PATH}"/zImage --ramdisk "${KERNEL_PATH}"/ramdisk.img --base 0x10800000 --cmdline "console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 max17135:pass=2,vcom=-2310000 fbmem=6M video=mxcepdcfb:E060SCM,bpp=16 no_console_suspend" --board evk_6sl_eink -o "${KERNEL_PATH}"/boot.img
-	"${KERNEL_PATH}"/mkbootimg --kernel "${KERNEL_PATH}"/arch/arm/boot/zImage --ramdisk "${OUT_PATH}"/ramdisk.img --base $BASEADDRESS --cmdline "console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 max17135:pass=2, fbmem=6M video=mxcepdcfb:E060SCM,bpp=16 no_console_suspend" --board evk_6sl_eink -o "${KERNEL_PATH}"/boot.img
+	"${KERNEL_PATH}"/mkbootimg --kernel $KERNEL_IMG --ramdisk "${OUT_PATH}"/ramdisk.img --base $BASEADDRESS --cmdline "console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 max17135:pass=2, fbmem=6M video=mxcepdcfb:E060SCM,bpp=16 no_console_suspend" --board evk_6sl_eink -o "${KERNEL_PATH}"/boot.img
 	mv "${KERNEL_PATH}"/boot.img "${OUT_PATH}"/boot.img
 fi
